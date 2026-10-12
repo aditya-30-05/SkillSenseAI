@@ -55,7 +55,7 @@ class _PerformanceHeader extends StatelessWidget {
                   ),
                 ),
                 const SizedBox(width: 10),
-                const Text(
+                const FlipText(
                   'Performance Analytics',
                   style: TextStyle(
                     color: AppColors.textPrimary,

@@ -1,0 +1,42 @@
+[
+  {
+    "id": "H001",
+    "name": "Methane (CH4) Pressurized Leak",
+    "gasType": "CH4",
+    "zone": "Zone B: Gas Storage",
+    "severity": "critical",
+    "thresholdPpm": 280.0,
+    "description": "High concentration pressurized flammable gas leak detected adjacent to primary storage tanks.",
+    "recommendedAction": "Immediate facility evacuation, deploy emergency nitrogen purge, isolate valve B-12."
+  },
+  {
+    "id": "H002",
+    "name": "Hydrogen Sulfide (H2S) Toxic Discharge",
+    "gasType": "H2S",
+    "zone": "Zone C: Welding Bay",
+    "severity": "critical",
+    "thresholdPpm": 50.0,
+    "description": "Lethal toxic sour gas accumulation detected in low-lying welding bay drainage trench.",
+    "recommendedAction": "Equip SCBA breathing gear immediately, activate overhead extraction blowers."
+  },
+  {
+    "id": "H003",
+    "name": "Carbon Monoxide (CO) Incomplete Combustion",
+    "gasType": "CO",
+    "zone": "Zone A: Pipe Gallery",
+    "severity": "warning",
+    "thresholdPpm": 85.0,
+    "description": "Rising asphyxiant gas concentration detected from faulty boiler intake ventilation duct.",
+    "recommendedAction": "Inspect boiler burners, verify intake dampeners, issue yellow alert to gallery crew."
+  },
+  {
+    "id": "H004",
+    "name": "Volatile Organic Compounds (VOC) Solvent Spill",
+    "gasType": "VOC",
+    "zone": "Zone D: Maintenance Depot",
+    "severity": "high",
+    "thresholdPpm": 160.0,
+    "description": "Vapor plume originating from overturned degreaser drums.",
+    "recommendedAction": "Apply absorbent sand, shut off ignition sources, check drone spark arrestor."
+  }
+]

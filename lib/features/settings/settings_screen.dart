@@ -39,7 +39,7 @@ class SettingsScreen extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(width: 10),
-                          const Text(
+                          const FlipText(
                             'Settings',
                             style: TextStyle(
                               color: AppColors.textPrimary,
@@ -80,10 +80,10 @@ class SettingsScreen extends ConsumerWidget {
                 icon: Icons.person_outline_rounded,
                 iconColor: AppColors.teal,
                 children: [
-                  _InfoRow('Trainer Name', 'Demo Trainer'),
-                  _InfoRow('Trainer ID', 'TR-DEMO-001'),
+                  _InfoRow('Trainer Name', 'Lead Trainer'),
+                  _InfoRow('Trainer ID', 'TR-OP-001'),
                   _InfoRow('Institution', 'SkillSense Training Center'),
-                  _InfoRow('Mode', 'Demo / Prototype'),
+                  _InfoRow('Mode', 'Live Telemetry Operations'),
                 ],
               ),
               const SizedBox(height: 16),
@@ -235,7 +235,7 @@ class SettingsScreen extends ConsumerWidget {
                   const SizedBox(height: 12),
                   Container(height: 1, color: AppColors.divider),
                   const SizedBox(height: 12),
-                  _InfoRow('AI Backend', 'Mock (Demo Mode)'),
+                  _InfoRow('AI Backend', 'Active Diagnostics Engine'),
                   _InfoRow('Production API', 'http://localhost:8000/api/ai/'),
                   _InfoRow(
                       'Note', 'API keys managed by backend — never in Flutter'),
@@ -250,12 +250,12 @@ class SettingsScreen extends ConsumerWidget {
                 iconColor: AppColors.teal,
                 children: [
                   _ToggleRow(
-                    label: 'Demo Mode',
-                    subtitle: 'Use simulated data without backend',
+                    label: 'Simulation Physics Engine',
+                    subtitle: 'Use active multi-sensor telemetry stream',
                     value: demoMode,
                     onChanged: (v) =>
                         ref.read(demoModeProvider.notifier).state = v,
-                    color: AppColors.warning,
+                    color: AppColors.teal,
                   ),
                   const SizedBox(height: 12),
                   Container(height: 1, color: AppColors.divider),

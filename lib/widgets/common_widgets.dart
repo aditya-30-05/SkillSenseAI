@@ -1,5 +1,11 @@
 import 'package:flutter/material.dart';
 import 'package:trainer_app/app/theme.dart';
+export 'package:trainer_app/widgets/animated_button.dart';
+export 'package:trainer_app/widgets/flip_text.dart';
+export 'package:trainer_app/widgets/flip_fade_text.dart';
+export 'package:trainer_app/widgets/pixelated_image_trail.dart';
+export 'package:trainer_app/widgets/agent_bento_grid.dart';
+export 'package:trainer_app/widgets/notch_navbar.dart';
 
 /// Interactive card with subtle hover translation, border highlight, and depth
 class InteractiveCard extends StatefulWidget {

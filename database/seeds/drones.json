@@ -1,0 +1,26 @@
+[
+  {
+    "id": "DRONE-01",
+    "callsign": "AERO-V1 (Inspection Scout)",
+    "model": "Matrice 350 Industrial Quad",
+    "firmwareVersion": "v4.2.1-industrial",
+    "status": "inFlight",
+    "batteryLevel": 82,
+    "sensorsEnabled": ["optical_ppm", "thermal_flir", "laser_methane", "barometric_altimeter"],
+    "maxFlightTimeMinutes": 38,
+    "currentAltitudeMeters": 4.2,
+    "groundSpeedMps": 1.4
+  },
+  {
+    "id": "DRONE-02",
+    "callsign": "SENTINEL-X (Sniffer)",
+    "model": "AeroSniff Pro Micro",
+    "firmwareVersion": "v3.8.9-safety",
+    "status": "standby",
+    "batteryLevel": 100,
+    "sensorsEnabled": ["multi_gas_ndir", "photoionization_voc", "ultrasonic_obstacle"],
+    "maxFlightTimeMinutes": 25,
+    "currentAltitudeMeters": 0.0,
+    "groundSpeedMps": 0.0
+  }
+]

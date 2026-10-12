@@ -5,6 +5,9 @@ import 'package:trainer_app/core/constants/mock_data.dart';
 import 'package:trainer_app/models/hazard.dart';
 import 'package:trainer_app/services/simulation_service.dart';
 import 'package:trainer_app/widgets/common_widgets.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:trainer_app/widgets/basemap_3d_panel.dart';
 
 class HazardMapScreen extends ConsumerStatefulWidget {
   const HazardMapScreen({super.key});
@@ -38,20 +41,20 @@ class _HazardMapScreenState extends ConsumerState<HazardMapScreen> {
             children: [
               Row(
                 children: [
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      FlipText(
                         'Hazard Geospatial Radar',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.6,
                         ),
                       ),
-                      SizedBox(height: 4),
-                      Text(
+                      const SizedBox(height: 4),
+                      const Text(
                         'Facility blueprint zones, anomaly pinpoints, and sensor severity breakdown',
                         style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                       ),
@@ -170,7 +173,7 @@ class _HazardMapScreenState extends ConsumerState<HazardMapScreen> {
   }
 }
 
-class _MapCanvas extends StatelessWidget {
+class _MapCanvas extends StatefulWidget {
   final List<HazardEvent> hazards;
   final SimulationData simData;
   final ValueChanged<HazardEvent> onSelect;
@@ -184,7 +187,253 @@ class _MapCanvas extends StatelessWidget {
   });
 
   @override
+  State<_MapCanvas> createState() => _MapCanvasState();
+}
+
+enum _HazardTileMode { basemap3d, satellite, streets }
+
+class _MapCanvasState extends State<_MapCanvas> {
+  late final MapController _mapController;
+  _HazardTileMode _tileMode = _HazardTileMode.satellite;
+  BasemapSettings _basemapSettings = const BasemapSettings();
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController = MapController();
+  }
+
+  @override
+  void dispose() {
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  String _getTileUrl() {
+    switch (_tileMode) {
+      case _HazardTileMode.basemap3d:
+        return _basemapSettings.getTileUrl();
+      case _HazardTileMode.satellite:
+        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+      case _HazardTileMode.streets:
+        return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    }
+  }
+
+  String? _getLabelOverlayUrl() {
+    switch (_tileMode) {
+      case _HazardTileMode.basemap3d:
+        return _basemapSettings.getLabelOverlayUrl();
+      case _HazardTileMode.satellite:
+        return 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
+      case _HazardTileMode.streets:
+        return null;
+    }
+  }
+
+  List<String> _getSubdomains() {
+    if (_tileMode == _HazardTileMode.basemap3d) {
+      return _basemapSettings.getSubdomains();
+    }
+    return const [];
+  }
+
+  Color _colorFor(RiskLevel r) {
+    switch (r) {
+      case RiskLevel.critical:
+        return AppColors.critical;
+      case RiskLevel.high:
+        return AppColors.high;
+      case RiskLevel.warning:
+        return AppColors.warning;
+      case RiskLevel.safe:
+        return AppColors.safe;
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final dronePos = LatLng(
+      widget.simData.telemetry.latitude,
+      widget.simData.telemetry.longitude,
+    );
+
+    final showPois = _tileMode == _HazardTileMode.basemap3d && _basemapSettings.pois;
+    final is3d = _tileMode == _HazardTileMode.basemap3d && _basemapSettings.is3dTilt;
+
+    Widget mapWidget = FlutterMap(
+      mapController: _mapController,
+      options: const MapOptions(
+        initialCenter: LatLng(20.5942, 78.9635),
+        initialZoom: 16.8,
+        minZoom: 13.0,
+        maxZoom: 19.0,
+        interactionOptions: InteractionOptions(
+          flags: InteractiveFlag.all,
+        ),
+      ),
+      children: [
+        TileLayer(
+          key: ValueKey('${_tileMode}_${_basemapSettings.satellite}_${_basemapSettings.mapboxToken}'),
+          urlTemplate: _getTileUrl(),
+          subdomains: _getSubdomains(),
+          userAgentPackageName: 'com.skillsense.trainer_app',
+          maxZoom: 19,
+        ),
+        // Labels/reference overlay
+        if (_getLabelOverlayUrl() != null)
+          TileLayer(
+            key: ValueKey('labels_${_tileMode}_${_basemapSettings.placeLabels}'),
+            urlTemplate: _getLabelOverlayUrl()!,
+            subdomains: _getSubdomains(),
+            userAgentPackageName: 'com.skillsense.trainer_app',
+            maxZoom: 19,
+          ),
+        // Hazard detection circle pulse rings
+        CircleLayer(
+          circles: widget.hazards.map((h) {
+            final color = _colorFor(h.riskLevel);
+            final isSelected = widget.selected?.id == h.id;
+            return CircleMarker(
+              point: LatLng(h.latitude, h.longitude),
+              radius: isSelected ? 36 : 22,
+              useRadiusInMeter: false,
+              color: color.withValues(alpha: isSelected ? 0.25 : 0.12),
+              borderColor: color.withValues(alpha: isSelected ? 0.9 : 0.5),
+              borderStrokeWidth: isSelected ? 2.0 : 1.2,
+            );
+          }).toList(),
+        ),
+        // Marker layer: Hazards, POIs and Drone
+        MarkerLayer(
+          markers: [
+            // Reference POIs with pill style from screenshot
+            if (showPois)
+              ...BasemapPoi.facilityPois.map((p) {
+                return Marker(
+                  point: p.point,
+                  width: 145,
+                  height: 30,
+                  alignment: Alignment.center,
+                  child: BasemapPoiPill(
+                    poi: p,
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${p.name} • ${p.category} Area Active'),
+                          duration: const Duration(seconds: 2),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: const Color(0xFF0F1523),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              }),
+            // Hazard pins
+            ...widget.hazards.map((h) {
+              final color = _colorFor(h.riskLevel);
+              final isSelected = widget.selected?.id == h.id;
+
+              return Marker(
+                point: LatLng(h.latitude, h.longitude),
+                width: 140,
+                height: 52,
+                alignment: Alignment.center,
+                child: GestureDetector(
+                  onTap: () => widget.onSelect(h),
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        padding: const EdgeInsets.symmetric(horizontal: 6, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: const Color(0xFF070B12).withValues(alpha: 0.92),
+                          borderRadius: BorderRadius.circular(5),
+                          border: Border.all(
+                            color: isSelected ? color : color.withValues(alpha: 0.6),
+                            width: isSelected ? 2.0 : 1.0,
+                          ),
+                          boxShadow: [
+                            BoxShadow(
+                              color: color.withValues(alpha: isSelected ? 0.45 : 0.2),
+                              blurRadius: isSelected ? 8 : 4,
+                            ),
+                          ],
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              width: 6,
+                              height: 6,
+                              decoration: BoxDecoration(shape: BoxShape.circle, color: color),
+                            ),
+                            const SizedBox(width: 4),
+                            Flexible(
+                              child: Text(
+                                '${h.zone} • ${h.sensorValue.toStringAsFixed(1)} ${h.sensorUnit}',
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                                style: TextStyle(
+                                  color: isSelected ? Colors.white : AppColors.textPrimary,
+                                  fontSize: 9.5,
+                                  fontWeight: isSelected ? FontWeight.w800 : FontWeight.w600,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(height: 2),
+                      Container(
+                        width: 8,
+                        height: 8,
+                        decoration: BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: color,
+                          border: Border.all(color: Colors.black, width: 1.5),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              );
+            }),
+            // Live drone location
+            Marker(
+              point: dronePos,
+              width: 48,
+              height: 48,
+              alignment: Alignment.center,
+              child: Container(
+                decoration: BoxDecoration(
+                  shape: BoxShape.circle,
+                  color: AppColors.teal.withValues(alpha: 0.25),
+                  border: Border.all(color: AppColors.teal, width: 1.5),
+                ),
+                child: const Center(
+                  child: Icon(Icons.navigation, color: AppColors.teal, size: 16),
+                ),
+              ),
+            ),
+          ],
+        ),
+      ],
+    );
+
+    if (is3d) {
+      mapWidget = ClipRect(
+        child: Transform(
+          transform: Matrix4.identity()
+            ..setEntry(3, 2, 0.0014)
+            ..rotateX(0.42),
+          alignment: FractionalOffset.center,
+          child: mapWidget,
+        ),
+      );
+    }
+
     return Container(
       decoration: BoxDecoration(
         color: const Color(0xFF070A0F),
@@ -193,89 +442,251 @@ class _MapCanvas extends StatelessWidget {
       ),
       child: ClipRRect(
         borderRadius: BorderRadius.circular(14),
-        child: CustomPaint(
-          painter: _HazardMapPainter(
-            hazards: hazards,
-            simData: simData,
-            selected: selected,
-          ),
-          child: GestureDetector(
-            onTapUp: (details) {
-              if (hazards.isNotEmpty) {
-                onSelect(hazards[0]);
-              }
-            },
-            child: Stack(
-              children: [
-                Positioned(
-                  bottom: 14,
-                  left: 14,
+        child: Stack(
+          children: [
+            mapWidget,
+
+            // Atmospheric Dusk / Night Tint in 3D Basemap mode with Satellite
+            if (_tileMode == _HazardTileMode.basemap3d && _basemapSettings.satellite)
+              Positioned.fill(
+                child: IgnorePointer(
                   child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.75),
-                      borderRadius: BorderRadius.circular(8),
-                      border: Border.all(color: AppColors.navyBorder.withValues(alpha: 0.7)),
-                    ),
-                    child: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        const Text(
-                          'SEVERITY SCALE',
-                          style: TextStyle(
-                            color: AppColors.textMuted,
-                            fontSize: 9,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.5,
-                          ),
-                        ),
-                        const SizedBox(height: 4),
-                        Row(
-                          children: [
-                            _legendItem(AppColors.safe, 'Safe'),
-                            const SizedBox(width: 10),
-                            _legendItem(AppColors.warning, 'Warning'),
-                            const SizedBox(width: 10),
-                            _legendItem(AppColors.high, 'Elevated'),
-                            const SizedBox(width: 10),
-                            _legendItem(AppColors.critical, 'Critical'),
-                          ],
-                        ),
-                      ],
-                    ),
+                    color: _basemapSettings.lighting == BasemapLighting.dusk
+                        ? const Color(0xFF140D06).withValues(alpha: 0.35)
+                        : const Color(0xFF020612).withValues(alpha: 0.46),
                   ),
                 ),
-                Positioned(
-                  top: 14,
-                  right: 14,
-                  child: Container(
-                    padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
-                    decoration: BoxDecoration(
-                      color: Colors.black.withValues(alpha: 0.65),
-                      borderRadius: BorderRadius.circular(6),
-                      border: Border.all(color: AppColors.navyBorder.withValues(alpha: 0.6)),
+              ),
+
+            // Top Left: Layer Mode Switcher (3D Basemap, Satellite, Streets)
+            Positioned(
+              top: 12,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF070B12).withValues(alpha: 0.90),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.navyBorder.withValues(alpha: 0.8)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 8,
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const PulseDot(color: AppColors.teal, size: 6),
-                        const SizedBox(width: 6),
-                        Text(
-                          'RADAR ACTIVE • ${hazards.length} PINS',
-                          style: const TextStyle(
-                            color: AppColors.textSecondary,
-                            fontSize: 10,
-                            fontWeight: FontWeight.w700,
-                            letterSpacing: 0.4,
-                          ),
-                        ),
-                      ],
-                    ),
-                  ),
+                  ],
                 ),
-              ],
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _layerButton(
+                      label: '3D Basemap',
+                      icon: Icons.view_in_ar_outlined,
+                      isSelected: _tileMode == _HazardTileMode.basemap3d,
+                      onTap: () => setState(() => _tileMode = _HazardTileMode.basemap3d),
+                    ),
+                    _layerButton(
+                      label: 'Satellite',
+                      icon: Icons.satellite_alt_outlined,
+                      isSelected: _tileMode == _HazardTileMode.satellite,
+                      onTap: () => setState(() => _tileMode = _HazardTileMode.satellite),
+                    ),
+                    _layerButton(
+                      label: 'Streets',
+                      icon: Icons.map_outlined,
+                      isSelected: _tileMode == _HazardTileMode.streets,
+                      onTap: () => setState(() => _tileMode = _HazardTileMode.streets),
+                    ),
+                  ],
+                ),
+              ),
             ),
+
+            // Top Right: 3D Basemap Control Panel (Matching reference screenshot)
+            if (_tileMode == _HazardTileMode.basemap3d)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: BasemapControlPanel(
+                  settings: _basemapSettings,
+                  onChanged: (s) => setState(() => _basemapSettings = s),
+                ),
+              ),
+
+            // Live feed status (shown when panel not in that spot or top center)
+            if (_tileMode != _HazardTileMode.basemap3d)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 5),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF070B12).withValues(alpha: 0.88),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.teal.withValues(alpha: 0.4)),
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      const PulseDot(color: AppColors.teal, size: 6),
+                      const SizedBox(width: 6),
+                      Text(
+                        'GIS RADAR ACTIVE • ${widget.hazards.length} PINS',
+                        style: const TextStyle(
+                          color: AppColors.teal,
+                          fontSize: 10,
+                          fontWeight: FontWeight.w700,
+                          letterSpacing: 0.4,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+            // Bottom Left: Severity Scale
+            Positioned(
+              bottom: 12,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 8),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF070B12).withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.navyBorder.withValues(alpha: 0.7)),
+                ),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    const Text(
+                      'SEVERITY SCALE',
+                      style: TextStyle(
+                        color: AppColors.textMuted,
+                        fontSize: 9,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.5,
+                      ),
+                    ),
+                    const SizedBox(height: 4),
+                    Row(
+                      children: [
+                        _legendItem(AppColors.safe, 'Safe'),
+                        const SizedBox(width: 10),
+                        _legendItem(AppColors.warning, 'Warning'),
+                        const SizedBox(width: 10),
+                        _legendItem(AppColors.high, 'Elevated'),
+                        const SizedBox(width: 10),
+                        _legendItem(AppColors.critical, 'Critical'),
+                      ],
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+            // Bottom Right: Zoom & Center Controls
+            Positioned(
+              bottom: 12,
+              right: 12,
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF070B12).withValues(alpha: 0.88),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.navyBorder.withValues(alpha: 0.8)),
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    Tooltip(
+                      message: 'Center Facility',
+                      child: InkWell(
+                        onTap: () => _mapController.move(const LatLng(20.5942, 78.9635), 16.8),
+                        borderRadius: BorderRadius.circular(5),
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          alignment: Alignment.center,
+                          child: const Icon(Icons.crop_free, size: 15, color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ),
+                    Tooltip(
+                      message: 'Zoom In',
+                      child: InkWell(
+                        onTap: () => _mapController.move(
+                          _mapController.camera.center,
+                          (_mapController.camera.zoom + 0.6).clamp(12.0, 19.0),
+                        ),
+                        borderRadius: BorderRadius.circular(5),
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          alignment: Alignment.center,
+                          child: const Icon(Icons.add, size: 15, color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ),
+                    Tooltip(
+                      message: 'Zoom Out',
+                      child: InkWell(
+                        onTap: () => _mapController.move(
+                          _mapController.camera.center,
+                          (_mapController.camera.zoom - 0.6).clamp(12.0, 19.0),
+                        ),
+                        borderRadius: BorderRadius.circular(5),
+                        child: Container(
+                          width: 28,
+                          height: 28,
+                          alignment: Alignment.center,
+                          child: const Icon(Icons.remove, size: 15, color: AppColors.textSecondary),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _layerButton({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(5),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.teal.withValues(alpha: 0.18) : Colors.transparent,
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(
+            color: isSelected ? AppColors.teal : Colors.transparent,
+            width: 1,
           ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 12, color: isSelected ? AppColors.teal : AppColors.textSecondary),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : AppColors.textSecondary,
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ],
         ),
       ),
     );
@@ -300,129 +711,6 @@ class _MapCanvas extends StatelessWidget {
   }
 }
 
-class _HazardMapPainter extends CustomPainter {
-  final List<HazardEvent> hazards;
-  final SimulationData simData;
-  final HazardEvent? selected;
-
-  _HazardMapPainter({
-    required this.hazards,
-    required this.simData,
-    this.selected,
-  });
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final gridPaint = Paint()
-      ..color = const Color(0xFF131923)
-      ..strokeWidth = 1;
-    for (int i = 1; i < 8; i++) {
-      canvas.drawLine(
-        Offset(size.width * i / 8, 0),
-        Offset(size.width * i / 8, size.height),
-        gridPaint,
-      );
-      canvas.drawLine(
-        Offset(0, size.height * i / 8),
-        Offset(size.width, size.height * i / 8),
-        gridPaint,
-      );
-    }
-
-    // Zone outlines
-    final zones = [
-      {'label': 'ZONE A  •  CHEMICAL STORAGE', 'x': 0.05, 'y': 0.05, 'w': 0.28, 'h': 0.42},
-      {'label': 'ZONE B  •  PIPE GALLERY', 'x': 0.36, 'y': 0.05, 'w': 0.28, 'h': 0.42},
-      {'label': 'ZONE C  •  WELDING FACILITY', 'x': 0.67, 'y': 0.05, 'w': 0.28, 'h': 0.42},
-      {'label': 'BASE DOCK  •  GROUND STN', 'x': 0.05, 'y': 0.54, 'w': 0.28, 'h': 0.40},
-      {'label': 'ZONE D  •  ELECTRICAL ROOM', 'x': 0.67, 'y': 0.54, 'w': 0.28, 'h': 0.40},
-    ];
-
-    final zoneStroke = Paint()
-      ..color = const Color(0xFF1E2738)
-      ..style = PaintingStyle.stroke
-      ..strokeWidth = 1.2;
-
-    for (final z in zones) {
-      final rect = Rect.fromLTWH(
-        size.width * (z['x'] as double),
-        size.height * (z['y'] as double),
-        size.width * (z['w'] as double),
-        size.height * (z['h'] as double),
-      );
-      canvas.drawRRect(RRect.fromRectAndRadius(rect, const Radius.circular(8)), zoneStroke);
-      final span = TextSpan(
-        text: z['label'] as String,
-        style: const TextStyle(
-          color: Color(0xFF475569),
-          fontSize: 10,
-          fontWeight: FontWeight.w700,
-          letterSpacing: 0.4,
-        ),
-      );
-      final painter = TextPainter(text: span, textDirection: TextDirection.ltr)..layout();
-      painter.paint(
-        canvas,
-        Offset(
-          size.width * (z['x'] as double) + 10,
-          size.height * (z['y'] as double) + 10,
-        ),
-      );
-    }
-
-    // Drone position marker
-    final dronePos = Offset(size.width * 0.16, size.height * 0.72);
-    canvas.drawCircle(dronePos, 16, Paint()..color = AppColors.teal.withValues(alpha: 0.15));
-    canvas.drawCircle(dronePos, 9, Paint()..color = AppColors.teal);
-
-    // Hazard markers
-    final positions = [
-      Offset(size.width * 0.19, size.height * 0.26),
-      Offset(size.width * 0.50, size.height * 0.24),
-      Offset(size.width * 0.81, size.height * 0.26),
-      Offset(size.width * 0.48, size.height * 0.72),
-      Offset(size.width * 0.81, size.height * 0.72),
-    ];
-
-    for (int i = 0; i < hazards.length && i < positions.length; i++) {
-      final h = hazards[i];
-      final pos = positions[i];
-      final color = _colorFor(h.riskLevel);
-      final isSelected = selected?.id == h.id;
-
-      canvas.drawCircle(pos, isSelected ? 24 : 18, Paint()..color = color.withValues(alpha: 0.18));
-      canvas.drawCircle(pos, isSelected ? 15 : 12, Paint()..color = color.withValues(alpha: 0.4));
-      canvas.drawCircle(pos, 7, Paint()..color = color);
-
-      if (isSelected) {
-        canvas.drawCircle(
-          pos,
-          24,
-          Paint()
-            ..color = color
-            ..style = PaintingStyle.stroke
-            ..strokeWidth = 2,
-        );
-      }
-    }
-  }
-
-  Color _colorFor(RiskLevel r) {
-    switch (r) {
-      case RiskLevel.critical:
-        return AppColors.critical;
-      case RiskLevel.high:
-        return AppColors.high;
-      case RiskLevel.warning:
-        return AppColors.warning;
-      case RiskLevel.safe:
-        return AppColors.safe;
-    }
-  }
-
-  @override
-  bool shouldRepaint(_HazardMapPainter old) => true;
-}
 
 class _HazardDetail extends StatelessWidget {
   final HazardEvent hazard;

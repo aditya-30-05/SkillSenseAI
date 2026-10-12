@@ -58,22 +58,14 @@ class AppShell extends ConsumerWidget {
     final width = MediaQuery.of(context).size.width;
     final isDesktop = width >= 1024;
     final isTablet = width >= 640 && width < 1024;
-    final isDemoMode = ref.watch(demoModeProvider);
 
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: Column(
-        children: [
-          if (isDemoMode) const DemoModeBanner(),
-          Expanded(
-            child: isDesktop
-                ? _DesktopLayout(navIndex: navIndex)
-                : isTablet
-                    ? _TabletLayout(navIndex: navIndex)
-                    : _MobileLayout(navIndex: navIndex),
-          ),
-        ],
-      ),
+      body: isDesktop
+          ? _DesktopLayout(navIndex: navIndex)
+          : isTablet
+              ? _TabletLayout(navIndex: navIndex)
+              : _MobileLayout(navIndex: navIndex),
     );
   }
 }
@@ -112,10 +104,35 @@ class _DesktopLayout extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final notchItems = _navItems
+        .map((n) => NotchNavItem(
+              icon: n.icon,
+              activeIcon: n.activeIcon,
+              label: n.label,
+            ))
+        .toList();
+
     return Row(
       children: [
         _Sidebar(navIndex: navIndex),
-        Expanded(child: _buildScreenTransition(navIndex)),
+        Expanded(
+          child: Column(
+            children: [
+              // Floating Notch Command Bar for Quick Flight HUD Navigation
+              Padding(
+                padding: const EdgeInsets.fromLTRB(24, 14, 24, 6),
+                child: NotchNavbar(
+                  currentIndex: navIndex,
+                  onItemSelected: (i) =>
+                      ref.read(navIndexProvider.notifier).state = i,
+                  items: notchItems,
+                  statusText: 'AEROGUARD HUD • DRONE-01 LINK',
+                ),
+              ),
+              Expanded(child: _buildScreenTransition(navIndex)),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -129,10 +146,34 @@ class _TabletLayout extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
+    final notchItems = _navItems
+        .map((n) => NotchNavItem(
+              icon: n.icon,
+              activeIcon: n.activeIcon,
+              label: n.label,
+            ))
+        .toList();
+
     return Row(
       children: [
         _RailNav(navIndex: navIndex),
-        Expanded(child: _buildScreenTransition(navIndex)),
+        Expanded(
+          child: Column(
+            children: [
+              Padding(
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 6),
+                child: NotchNavbar(
+                  currentIndex: navIndex,
+                  onItemSelected: (i) =>
+                      ref.read(navIndexProvider.notifier).state = i,
+                  items: notchItems,
+                  statusText: 'AEROGUARD HUD',
+                ),
+              ),
+              Expanded(child: _buildScreenTransition(navIndex)),
+            ],
+          ),
+        ),
       ],
     );
   }
@@ -146,43 +187,37 @@ class _MobileLayout extends ConsumerWidget {
 
   @override
   Widget build(BuildContext context, WidgetRef ref) {
-    final bottomItems = _navItems.take(5).toList();
+    final notchItems = _navItems
+        .map((n) => NotchNavItem(
+              icon: n.icon,
+              activeIcon: n.activeIcon,
+              label: n.label,
+            ))
+        .toList();
+
     return Scaffold(
       backgroundColor: AppColors.background,
-      body: _buildScreenTransition(navIndex),
-      bottomNavigationBar: Container(
-        decoration: BoxDecoration(
-          color: AppColors.surface,
-          border: Border(
-            top: BorderSide(color: AppColors.navyBorder.withValues(alpha: 0.6), width: 1),
+      body: Stack(
+        children: [
+          Positioned.fill(
+            child: Padding(
+              padding: const EdgeInsets.only(bottom: 72),
+              child: _buildScreenTransition(navIndex),
+            ),
           ),
-        ),
-        child: BottomNavigationBar(
-          currentIndex: navIndex < 5 ? navIndex : 0,
-          onTap: (i) => ref.read(navIndexProvider.notifier).state = i,
-          backgroundColor: AppColors.surface,
-          elevation: 0,
-          selectedItemColor: AppColors.teal,
-          unselectedItemColor: AppColors.textMuted,
-          type: BottomNavigationBarType.fixed,
-          selectedFontSize: 11,
-          unselectedFontSize: 11,
-          items: bottomItems
-              .asMap()
-              .entries
-              .map((e) => BottomNavigationBarItem(
-                    icon: Padding(
-                      padding: const EdgeInsets.only(bottom: 2),
-                      child: Icon(e.value.icon, size: 20),
-                    ),
-                    activeIcon: Padding(
-                      padding: const EdgeInsets.only(bottom: 2),
-                      child: Icon(e.value.activeIcon, size: 20),
-                    ),
-                    label: e.value.label,
-                  ))
-              .toList(),
-        ),
+          Positioned(
+            left: 12,
+            right: 12,
+            bottom: 12,
+            child: NotchNavbar(
+              currentIndex: navIndex,
+              onItemSelected: (i) =>
+                  ref.read(navIndexProvider.notifier).state = i,
+              items: notchItems,
+              statusText: 'AEROGUARD',
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -329,7 +364,7 @@ class _Sidebar extends ConsumerWidget {
                     ),
                     alignment: Alignment.center,
                     child: const Text(
-                      'DT',
+                      'LT',
                       style: TextStyle(
                         color: AppColors.teal,
                         fontSize: 11,
@@ -343,7 +378,7 @@ class _Sidebar extends ConsumerWidget {
                       crossAxisAlignment: CrossAxisAlignment.start,
                       children: [
                         Text(
-                          'Demo Trainer',
+                          'Lead Trainer',
                           style: TextStyle(
                             color: AppColors.textPrimary,
                             fontSize: 12,

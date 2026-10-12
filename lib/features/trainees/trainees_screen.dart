@@ -38,7 +38,7 @@ class TraineesScreen extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(width: 10),
-                          const Text(
+                          const FlipText(
                             'Trainees',
                             style: TextStyle(
                               color: AppColors.textPrimary,

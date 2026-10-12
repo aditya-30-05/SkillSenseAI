@@ -46,3 +46,9 @@ app.*.map.json
 
 # Widget Preview related
 .widget_preview/
+
+# Web / Node / Next.js
+node_modules/
+.next/
+.vercel/
+*.env*.local

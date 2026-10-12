@@ -1,0 +1,94 @@
+{
+  "openapi": "3.1.0",
+  "info": {
+    "title": "SkillSense AI Backend API",
+    "version": "1.0.0",
+    "description": "REST and WebSocket endpoints for real-time telemetry streaming, hazard injection, and training session evaluation."
+  },
+  "servers": [
+    {
+      "url": "http://localhost:8080/api/v1",
+      "description": "Local Simulation & Training Server"
+    }
+  ],
+  "paths": {
+    "/telemetry/stream": {
+      "get": {
+        "summary": "Real-time Telemetry WebSocket stream",
+        "description": "Bi-directional WebSocket connection emitting drone coordinates, PPM gas readings, battery level, and receiving trainer hazard injections.",
+        "responses": {
+          "101": {
+            "description": "Switching protocols to WebSocket"
+          }
+        }
+      }
+    },
+    "/hazards/inject": {
+      "post": {
+        "summary": "Inject a live hazard into active session",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sessionId": { "type": "string" },
+                  "hazardType": { "type": "string", "enum": ["methane_spike", "h2s_leak", "co_buildup"] },
+                  "targetPpm": { "type": "number" },
+                  "zone": { "type": "string" }
+                },
+                "required": ["sessionId", "hazardType", "targetPpm", "zone"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Hazard successfully injected into simulation" }
+        }
+      }
+    },
+    "/emergency/abort": {
+      "post": {
+        "summary": "Trigger immediate emergency abort or RTH",
+        "requestBody": {
+          "required": true,
+          "content": {
+            "application/json": {
+              "schema": {
+                "type": "object",
+                "properties": {
+                  "sessionId": { "type": "string" },
+                  "action": { "type": "string", "enum": ["ABORT_MISSION", "RETURN_TO_HOME"] }
+                },
+                "required": ["sessionId", "action"]
+              }
+            }
+          }
+        },
+        "responses": {
+          "200": { "description": "Drone override command dispatched" }
+        }
+      }
+    },
+    "/trainees": {
+      "get": {
+        "summary": "List all trainees with skill statistics",
+        "responses": {
+          "200": { "description": "Array of trainee objects" }
+        }
+      }
+    },
+    "/sessions/{sessionId}": {
+      "get": {
+        "summary": "Retrieve session playback and score breakdown",
+        "parameters": [
+          { "name": "sessionId", "in": "path", "required": true, "schema": { "type": "string" } }
+        ],
+        "responses": {
+          "200": { "description": "Session details object" }
+        }
+      }
+    }
+  }
+}

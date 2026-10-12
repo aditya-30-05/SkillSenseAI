@@ -114,19 +114,19 @@ class _Header extends StatelessWidget {
             child: const Icon(Icons.smart_toy_rounded, color: Colors.white, size: 20),
           ),
           const SizedBox(width: 14),
-          const Column(
+          Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Text(
+              FlipText(
                 'SkillSense AI Coach',
-                style: TextStyle(
+                style: const TextStyle(
                   color: AppColors.textPrimary,
                   fontSize: 17,
                   fontWeight: FontWeight.bold,
                   letterSpacing: -0.3,
                 ),
               ),
-              Text(
+              const Text(
                 'AI-powered training analysis and coaching assistant',
                 style: TextStyle(color: AppColors.textSecondary, fontSize: 12),
               ),

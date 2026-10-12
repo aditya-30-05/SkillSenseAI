@@ -3,15 +3,15 @@ import 'package:trainer_app/models/ai_feedback.dart';
 import 'package:trainer_app/core/constants/mock_data.dart';
 
 // Settings providers
-final demoModeProvider = StateProvider<bool>((ref) => true);
+final demoModeProvider = StateProvider<bool>((ref) => false);
 final darkModeProvider = StateProvider<bool>((ref) => true);
 final aiEnabledProvider = StateProvider<bool>((ref) => true);
 final notificationsProvider = StateProvider<bool>((ref) => true);
 final alertThresholdProvider = StateProvider<double>((ref) => 5.0);
 
 // Auth providers
-final isLoggedInProvider = StateProvider<bool>((ref) => false);
-final trainerNameProvider = StateProvider<String>((ref) => 'Demo Trainer');
+final isLoggedInProvider = StateProvider<bool>((ref) => true);
+final trainerNameProvider = StateProvider<String>((ref) => 'Lead Trainer');
 
 // AI Chat provider
 final aiChatHistoryProvider =

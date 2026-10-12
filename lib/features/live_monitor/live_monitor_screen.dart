@@ -6,6 +6,9 @@ import 'package:trainer_app/models/telemetry.dart';
 import 'package:trainer_app/services/simulation_service.dart';
 import 'package:trainer_app/widgets/common_widgets.dart';
 import 'package:fl_chart/fl_chart.dart';
+import 'package:flutter_map/flutter_map.dart';
+import 'package:latlong2/latlong.dart';
+import 'package:trainer_app/widgets/basemap_3d_panel.dart';
 
 class LiveMonitorScreen extends ConsumerWidget {
   const LiveMonitorScreen({super.key});
@@ -84,9 +87,9 @@ class _PageHeader extends StatelessWidget {
             children: [
               Row(
                 children: [
-                  const Text(
+                  FlipText(
                     'Mission Cockpit',
-                    style: TextStyle(
+                    style: const TextStyle(
                       color: AppColors.textPrimary,
                       fontSize: 26,
                       fontWeight: FontWeight.w800,
@@ -120,75 +123,57 @@ class _PageHeader extends StatelessWidget {
           spacing: 10,
           children: [
             if (!isRunning && !isPaused)
-              ElevatedButton.icon(
-                onPressed: () => ref.read(simulationProvider.notifier).startMission(),
-                icon: const Icon(Icons.play_arrow, size: 16),
-                label: const Text('Start Mission'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.safe,
-                  foregroundColor: const Color(0xFF080A0F),
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                ),
+              AnimatedButton(
+                onPressed: () =>
+                    ref.read(simulationProvider.notifier).startMission(),
+                icon: Icons.play_arrow,
+                text: 'Start Mission',
+                variant: AnimatedButtonVariant.primary,
+                height: 42,
               ),
             if (isRunning)
-              ElevatedButton.icon(
-                onPressed: () => ref.read(simulationProvider.notifier).injectHazard(),
-                icon: const Icon(Icons.bolt, size: 16),
-                label: const Text('Inject Hazard'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.critical,
-                  foregroundColor: Colors.white,
-                  padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                ),
+              AnimatedButton(
+                onPressed: () =>
+                    ref.read(simulationProvider.notifier).injectHazard(),
+                icon: Icons.bolt,
+                text: 'Inject Hazard',
+                variant: AnimatedButtonVariant.critical,
+                height: 42,
               ),
             if (isRunning)
-              OutlinedButton.icon(
-                onPressed: () => ref.read(simulationProvider.notifier).pauseMission(),
-                icon: const Icon(Icons.pause, size: 16),
-                label: const Text('Pause'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.warning,
-                  side: BorderSide(color: AppColors.warning.withValues(alpha: 0.5)),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                ),
+              AnimatedButton(
+                onPressed: () =>
+                    ref.read(simulationProvider.notifier).pauseMission(),
+                icon: Icons.pause,
+                text: 'Pause',
+                variant: AnimatedButtonVariant.warning,
+                height: 42,
               ),
             if (isPaused)
-              ElevatedButton.icon(
-                onPressed: () => ref.read(simulationProvider.notifier).resumeMission(),
-                icon: const Icon(Icons.play_arrow, size: 16),
-                label: const Text('Resume'),
-                style: ElevatedButton.styleFrom(
-                  backgroundColor: AppColors.teal,
-                  foregroundColor: const Color(0xFF080A0F),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                ),
+              AnimatedButton(
+                onPressed: () =>
+                    ref.read(simulationProvider.notifier).resumeMission(),
+                icon: Icons.play_arrow,
+                text: 'Resume',
+                variant: AnimatedButtonVariant.primary,
+                height: 42,
               ),
             if (isRunning || isPaused)
-              OutlinedButton.icon(
-                onPressed: () => ref.read(simulationProvider.notifier).stopMission(),
-                icon: const Icon(Icons.stop, size: 16),
-                label: const Text('Stop (RTH)'),
-                style: OutlinedButton.styleFrom(
-                  foregroundColor: AppColors.critical,
-                  side: BorderSide(color: AppColors.critical.withValues(alpha: 0.5)),
-                  padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-                ),
+              AnimatedButton(
+                onPressed: () =>
+                    ref.read(simulationProvider.notifier).stopMission(),
+                icon: Icons.stop,
+                text: 'Stop (RTH)',
+                variant: AnimatedButtonVariant.critical,
+                height: 42,
               ),
-            OutlinedButton.icon(
-              onPressed: () => ref.read(simulationProvider.notifier).resetMission(),
-              icon: const Icon(Icons.refresh, size: 16),
-              label: const Text('Reset'),
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.textSecondary,
-                side: BorderSide(color: AppColors.navyBorder.withValues(alpha: 0.7)),
-                padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(9)),
-              ),
+            AnimatedButton(
+              onPressed: () =>
+                  ref.read(simulationProvider.notifier).resetMission(),
+              icon: Icons.refresh,
+              text: 'Reset',
+              variant: AnimatedButtonVariant.outline,
+              height: 42,
             ),
           ],
         ),
@@ -391,7 +376,7 @@ class _MapArea extends StatelessWidget {
             ),
           ),
           Container(
-            height: 330,
+            height: 390,
             margin: const EdgeInsets.fromLTRB(16, 0, 16, 16),
             decoration: BoxDecoration(
               color: const Color(0xFF090D15),
@@ -400,7 +385,7 @@ class _MapArea extends StatelessWidget {
             ),
             child: ClipRRect(
               borderRadius: BorderRadius.circular(10),
-              child: _SimulatedMapView(sim: sim),
+              child: RealGisMapView(sim: sim),
             ),
           ),
         ],
@@ -409,172 +394,752 @@ class _MapArea extends StatelessWidget {
   }
 }
 
-class _SimulatedMapView extends StatelessWidget {
+enum MapTileSource { basemap3d, satellite, streets }
+
+class _WaypointData {
+  final LatLng point;
+  final String label;
+  final String code;
+  final bool isBase;
+  const _WaypointData({
+    required this.point,
+    required this.label,
+    required this.code,
+    this.isBase = false,
+  });
+}
+
+class RealGisMapView extends StatefulWidget {
   final SimulationData sim;
-  const _SimulatedMapView({required this.sim});
+  const RealGisMapView({super.key, required this.sim});
+
+  @override
+  State<RealGisMapView> createState() => _RealGisMapViewState();
+}
+
+class _RealGisMapViewState extends State<RealGisMapView> with SingleTickerProviderStateMixin {
+  late final MapController _mapController;
+  late final AnimationController _pulseAnim;
+  MapTileSource _tileSource = MapTileSource.satellite;
+  BasemapSettings _basemapSettings = const BasemapSettings();
+  bool _autoFollow = true;
+
+  static const _waypoints = [
+    _WaypointData(
+      point: LatLng(20.5937, 78.9629),
+      label: 'BASE DOCK',
+      code: 'WP-0',
+      isBase: true,
+    ),
+    _WaypointData(
+      point: LatLng(20.5940, 78.9631),
+      label: 'ZONE A (STORAGE)',
+      code: 'WP-1',
+    ),
+    _WaypointData(
+      point: LatLng(20.5943, 78.9634),
+      label: 'ZONE B (PIPE GALLERY)',
+      code: 'WP-2',
+    ),
+    _WaypointData(
+      point: LatLng(20.5946, 78.9637),
+      label: 'ZONE C (WELDING)',
+      code: 'WP-3',
+    ),
+    _WaypointData(
+      point: LatLng(20.5942, 78.9641),
+      label: 'INSPECTION CORRIDOR',
+      code: 'WP-4',
+    ),
+  ];
+
+  @override
+  void initState() {
+    super.initState();
+    _mapController = MapController();
+    _pulseAnim = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 1800),
+    )..repeat();
+  }
+
+  @override
+  void didUpdateWidget(covariant RealGisMapView oldWidget) {
+    super.didUpdateWidget(oldWidget);
+    if (_autoFollow &&
+        (oldWidget.sim.telemetry.latitude != widget.sim.telemetry.latitude ||
+            oldWidget.sim.telemetry.longitude != widget.sim.telemetry.longitude)) {
+      WidgetsBinding.instance.addPostFrameCallback((_) {
+        if (mounted) {
+          try {
+            _mapController.move(
+              LatLng(widget.sim.telemetry.latitude, widget.sim.telemetry.longitude),
+              _mapController.camera.zoom,
+            );
+          } catch (_) {}
+        }
+      });
+    }
+  }
+
+  @override
+  void dispose() {
+    _pulseAnim.dispose();
+    _mapController.dispose();
+    super.dispose();
+  }
+
+  String _getTileUrl() {
+    switch (_tileSource) {
+      case MapTileSource.basemap3d:
+        return _basemapSettings.getTileUrl();
+      case MapTileSource.satellite:
+        return 'https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}';
+      case MapTileSource.streets:
+        return 'https://tile.openstreetmap.org/{z}/{x}/{y}.png';
+    }
+  }
+
+  List<String> _getSubdomains() {
+    if (_tileSource == MapTileSource.basemap3d) {
+      return _basemapSettings.getSubdomains();
+    }
+    return const [];
+  }
+
+  String? _getLabelOverlayUrl() {
+    switch (_tileSource) {
+      case MapTileSource.basemap3d:
+        return _basemapSettings.getLabelOverlayUrl();
+      case MapTileSource.satellite:
+        return 'https://server.arcgisonline.com/ArcGIS/rest/services/Reference/World_Boundaries_and_Places/MapServer/tile/{z}/{y}/{x}';
+      case MapTileSource.streets:
+        return null;
+    }
+  }
+
+  void _zoomIn() {
+    try {
+      final newZoom = (_mapController.camera.zoom + 0.6).clamp(12.0, 19.0);
+      _mapController.move(_mapController.camera.center, newZoom);
+    } catch (_) {}
+  }
+
+  void _zoomOut() {
+    try {
+      final newZoom = (_mapController.camera.zoom - 0.6).clamp(12.0, 19.0);
+      _mapController.move(_mapController.camera.center, newZoom);
+    } catch (_) {}
+  }
+
+  void _centerDrone() {
+    try {
+      _mapController.move(
+        LatLng(widget.sim.telemetry.latitude, widget.sim.telemetry.longitude),
+        17.4,
+      );
+      setState(() => _autoFollow = true);
+    } catch (_) {}
+  }
+
+  void _fitFacility() {
+    try {
+      _mapController.move(const LatLng(20.5942, 78.9635), 17.0);
+    } catch (_) {}
+  }
 
   @override
   Widget build(BuildContext context) {
-    return CustomPaint(
-      painter: _MapPainter(sim: sim),
-      child: Stack(
-        children: [
-          // GPS coordinates overlay
-          Positioned(
-            bottom: 12,
-            left: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.7),
-                borderRadius: BorderRadius.circular(6),
-                border: Border.all(color: AppColors.navyBorder.withValues(alpha: 0.6)),
+    final dronePos = LatLng(widget.sim.telemetry.latitude, widget.sim.telemetry.longitude);
+    final routePoints = _waypoints.map((w) => w.point).toList();
+    final hasHazard = widget.sim.hazardInjected || widget.sim.activeHazard != null;
+    final hazardPos = const LatLng(20.5946, 78.9637);
+    final showPois = _tileSource == MapTileSource.basemap3d && _basemapSettings.pois;
+    final is3d = _tileSource == MapTileSource.basemap3d && _basemapSettings.is3dTilt;
+
+    Widget mapWidget = FlutterMap(
+      mapController: _mapController,
+      options: const MapOptions(
+        initialCenter: LatLng(20.5942, 78.9635),
+        initialZoom: 17.2,
+        minZoom: 13.0,
+        maxZoom: 19.0,
+        interactionOptions: InteractionOptions(
+          flags: InteractiveFlag.all,
+        ),
+      ),
+      children: [
+        TileLayer(
+          key: ValueKey('${_tileSource}_${_basemapSettings.satellite}_${_basemapSettings.mapboxToken}'),
+          urlTemplate: _getTileUrl(),
+          subdomains: _getSubdomains(),
+          userAgentPackageName: 'com.skillsense.trainer_app',
+          maxZoom: 19,
+        ),
+        // Labels/reference overlay
+        if (_getLabelOverlayUrl() != null)
+          TileLayer(
+            key: ValueKey('labels_${_tileSource}_${_basemapSettings.placeLabels}'),
+            urlTemplate: _getLabelOverlayUrl()!,
+            subdomains: _getSubdomains(),
+            userAgentPackageName: 'com.skillsense.trainer_app',
+            maxZoom: 19,
+          ),
+        // Mission flight path polylines
+        PolylineLayer(
+          polylines: [
+            // Outer glow shadow
+            Polyline(
+              points: routePoints,
+              strokeWidth: 6.0,
+              color: AppColors.teal.withValues(alpha: 0.25),
+            ),
+            // Sharp main route
+            Polyline(
+              points: routePoints,
+              strokeWidth: 2.8,
+              color: AppColors.teal,
+              borderStrokeWidth: 1.2,
+              borderColor: const Color(0xFF00382E),
+            ),
+          ],
+        ),
+        // Hazard radius zone
+        if (hasHazard)
+          CircleLayer(
+            circles: [
+              CircleMarker(
+                point: hazardPos,
+                radius: 38,
+                useRadiusInMeter: false,
+                color: AppColors.critical.withValues(alpha: 0.22),
+                borderColor: AppColors.critical,
+                borderStrokeWidth: 2.0,
               ),
-              child: Row(
-                mainAxisSize: MainAxisSize.min,
-                children: [
-                  const Icon(Icons.my_location, color: AppColors.teal, size: 12),
-                  const SizedBox(width: 6),
-                  Text(
-                    '${sim.telemetry.latitude.toStringAsFixed(4)}°N  ${sim.telemetry.longitude.toStringAsFixed(4)}°E',
-                    style: const TextStyle(
-                      color: AppColors.teal,
-                      fontSize: 11,
-                      fontWeight: FontWeight.w600,
-                      fontFamily: 'monospace',
+            ],
+          ),
+        // Waypoints, POIs & Drone Marker
+        MarkerLayer(
+          markers: [
+            // Reference POIs with pill style from screenshot
+            if (showPois)
+              ...BasemapPoi.facilityPois.map((p) {
+                return Marker(
+                  point: p.point,
+                  width: 145,
+                  height: 30,
+                  alignment: Alignment.center,
+                  child: BasemapPoiPill(
+                    poi: p,
+                    onTap: () {
+                      ScaffoldMessenger.of(context).showSnackBar(
+                        SnackBar(
+                          content: Text('${p.name} • ${p.category} Area Active'),
+                          duration: const Duration(seconds: 2),
+                          behavior: SnackBarBehavior.floating,
+                          backgroundColor: const Color(0xFF0F1523),
+                        ),
+                      );
+                    },
+                  ),
+                );
+              }),
+                // Waypoint markers
+                ..._waypoints.asMap().entries.map((entry) {
+                  final idx = entry.key;
+                  final wp = entry.value;
+                  final isCurrent = widget.sim.waypointIndex == idx;
+
+                  return Marker(
+                    point: wp.point,
+                    width: 135,
+                    height: 48,
+                    alignment: Alignment.center,
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Waypoint chip
+                        Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 7, vertical: 3),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF070B12).withValues(alpha: 0.88),
+                            borderRadius: BorderRadius.circular(4),
+                            border: Border.all(
+                              color: isCurrent
+                                  ? AppColors.teal
+                                  : AppColors.navyBorder.withValues(alpha: 0.9),
+                              width: isCurrent ? 1.5 : 1.0,
+                            ),
+                            boxShadow: isCurrent
+                                ? [
+                                    BoxShadow(
+                                      color: AppColors.teal.withValues(alpha: 0.35),
+                                      blurRadius: 8,
+                                    ),
+                                  ]
+                                : null,
+                          ),
+                          child: Row(
+                            mainAxisSize: MainAxisSize.min,
+                            children: [
+                              Container(
+                                width: 5,
+                                height: 5,
+                                decoration: BoxDecoration(
+                                  shape: BoxShape.circle,
+                                  color: isCurrent ? AppColors.teal : const Color(0xFF64748B),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Flexible(
+                                child: Text(
+                                  wp.label,
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                  style: TextStyle(
+                                    color: isCurrent ? AppColors.teal : const Color(0xFF94A3B8),
+                                    fontSize: 9.5,
+                                    fontWeight: isCurrent ? FontWeight.w700 : FontWeight.w600,
+                                    letterSpacing: 0.3,
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        const SizedBox(height: 2),
+                        // Node dot
+                        Container(
+                          width: 7,
+                          height: 7,
+                          decoration: BoxDecoration(
+                            shape: BoxShape.circle,
+                            color: isCurrent ? AppColors.teal : const Color(0xFF334155),
+                            border: Border.all(
+                              color: const Color(0xFF0F172A),
+                              width: 1.5,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                  );
+                }),
+                // Hazard badge marker
+                if (hasHazard)
+                  Marker(
+                    point: hazardPos,
+                    width: 150,
+                    height: 52,
+                    alignment: Alignment.bottomCenter,
+                    child: Container(
+                      margin: const EdgeInsets.only(bottom: 24),
+                      padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+                      decoration: BoxDecoration(
+                        color: const Color(0xFF2D0D12),
+                        borderRadius: BorderRadius.circular(6),
+                        border: Border.all(color: AppColors.critical, width: 1.5),
+                        boxShadow: [
+                          BoxShadow(
+                            color: AppColors.critical.withValues(alpha: 0.45),
+                            blurRadius: 10,
+                          ),
+                        ],
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          const Icon(Icons.warning_amber_rounded, color: AppColors.critical, size: 13),
+                          const SizedBox(width: 4),
+                          Text(
+                            'GAS LEAK • ${widget.sim.telemetry.gasPpm.toStringAsFixed(1)} PPM',
+                            style: const TextStyle(
+                              color: Colors.white,
+                              fontSize: 9.5,
+                              fontWeight: FontWeight.w800,
+                              letterSpacing: 0.3,
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ),
-                ],
-              ),
+                // Live drone marker
+                Marker(
+                  point: dronePos,
+                  width: 90,
+                  height: 90,
+                  alignment: Alignment.center,
+                  child: AnimatedBuilder(
+                    animation: _pulseAnim,
+                    builder: (context, child) {
+                      final wave = _pulseAnim.value;
+                      return Stack(
+                        alignment: Alignment.center,
+                        children: [
+                          // Radar pulse ring
+                          Container(
+                            width: 32 + (wave * 34),
+                            height: 32 + (wave * 34),
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.teal.withValues(alpha: (1.0 - wave) * 0.7),
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                          // Tactical halo
+                          Container(
+                            width: 34,
+                            height: 34,
+                            decoration: BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.teal.withValues(alpha: 0.2),
+                              border: Border.all(
+                                color: AppColors.teal.withValues(alpha: 0.8),
+                                width: 1.5,
+                              ),
+                            ),
+                          ),
+                          // Drone Core icon
+                          Container(
+                            width: 22,
+                            height: 22,
+                            decoration: const BoxDecoration(
+                              shape: BoxShape.circle,
+                              color: AppColors.teal,
+                              boxShadow: [
+                                BoxShadow(
+                                  color: Color(0xFF00F0B5),
+                                  blurRadius: 8,
+                                ),
+                              ],
+                            ),
+                            child: const Icon(
+                              Icons.navigation,
+                              size: 13,
+                              color: Color(0xFF05080E),
+                            ),
+                          ),
+                          // Drone callout pill
+                          Positioned(
+                            bottom: 5,
+                            child: Container(
+                              padding: const EdgeInsets.symmetric(horizontal: 5, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: Colors.black.withValues(alpha: 0.85),
+                                borderRadius: BorderRadius.circular(3),
+                                border: Border.all(
+                                  color: AppColors.teal.withValues(alpha: 0.6),
+                                  width: 0.8,
+                                ),
+                              ),
+                              child: Text(
+                                'DRONE-01 • ${widget.sim.telemetry.altitudeM.toStringAsFixed(1)}m',
+                                style: const TextStyle(
+                                  color: AppColors.teal,
+                                  fontSize: 8.5,
+                                  fontWeight: FontWeight.w700,
+                                  letterSpacing: 0.2,
+                                ),
+                              ),
+                            ),
+                          ),
+                        ],
+                      );
+                    },
+                  ),
+                ),
+              ],
             ),
-          ),
-          // Disclaimer
-          Positioned(
-            top: 12,
-            right: 12,
-            child: Container(
-              padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
-              decoration: BoxDecoration(
-                color: Colors.black.withValues(alpha: 0.6),
-                borderRadius: BorderRadius.circular(4),
+          ],
+        );
+
+        if (is3d) {
+          mapWidget = ClipRect(
+            child: Transform(
+              transform: Matrix4.identity()
+                ..setEntry(3, 2, 0.0014)
+                ..rotateX(0.42),
+              alignment: FractionalOffset.center,
+              child: mapWidget,
+            ),
+          );
+        }
+
+        return Stack(
+          children: [
+            mapWidget,
+
+            // Atmospheric Dusk / Night Tint in 3D Basemap mode with Satellite
+            if (_tileSource == MapTileSource.basemap3d && _basemapSettings.satellite)
+              Positioned.fill(
+                child: IgnorePointer(
+                  child: Container(
+                    color: _basemapSettings.lighting == BasemapLighting.dusk
+                        ? const Color(0xFF140D06).withValues(alpha: 0.35)
+                        : const Color(0xFF020612).withValues(alpha: 0.46),
+                  ),
+                ),
               ),
-              child: const Text(
-                'SIMULATED TELEMETRY',
-                style: TextStyle(
-                  color: AppColors.textMuted,
-                  fontSize: 9,
-                  fontWeight: FontWeight.w700,
-                  letterSpacing: 0.5,
+
+            // TOP LEFT: Map Layer Switcher (3D Basemap, Satellite, Streets)
+            Positioned(
+              top: 12,
+              left: 12,
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: BoxDecoration(
+                  color: const Color(0xFF070B12).withValues(alpha: 0.90),
+                  borderRadius: BorderRadius.circular(8),
+                  border: Border.all(color: AppColors.navyBorder.withValues(alpha: 0.8)),
+                  boxShadow: [
+                    BoxShadow(
+                      color: Colors.black.withValues(alpha: 0.4),
+                      blurRadius: 8,
+                    ),
+                  ],
+                ),
+                child: Row(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildLayerButton(
+                      label: '3D Basemap',
+                      icon: Icons.view_in_ar_outlined,
+                      isSelected: _tileSource == MapTileSource.basemap3d,
+                      onTap: () => setState(() => _tileSource = MapTileSource.basemap3d),
+                    ),
+                    _buildLayerButton(
+                      label: 'Satellite Recon',
+                      icon: Icons.satellite_alt_outlined,
+                      isSelected: _tileSource == MapTileSource.satellite,
+                      onTap: () => setState(() => _tileSource = MapTileSource.satellite),
+                    ),
+                    _buildLayerButton(
+                      label: 'Streets',
+                      icon: Icons.map_outlined,
+                      isSelected: _tileSource == MapTileSource.streets,
+                      onTap: () => setState(() => _tileSource = MapTileSource.streets),
+                    ),
+                  ],
                 ),
               ),
             ),
+
+            // TOP RIGHT: 3D Basemap Control Panel or Live GIS Feed Badge
+            if (_tileSource == MapTileSource.basemap3d)
+              Positioned(
+                top: 12,
+                right: 12,
+                child: BasemapControlPanel(
+                  settings: _basemapSettings,
+                  onChanged: (s) => setState(() => _basemapSettings = s),
+                ),
+              )
+            else
+              Positioned(
+                top: 12,
+                right: 12,
+                child: Container(
+                  padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+                  decoration: BoxDecoration(
+                    color: const Color(0xFF070B12).withValues(alpha: 0.9),
+                    borderRadius: BorderRadius.circular(6),
+                    border: Border.all(color: AppColors.teal.withValues(alpha: 0.4)),
+                    boxShadow: [
+                      BoxShadow(
+                        color: Colors.black.withValues(alpha: 0.4),
+                        blurRadius: 6,
+                      ),
+                    ],
+                  ),
+                  child: Row(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      Container(
+                        width: 7,
+                        height: 7,
+                        decoration: const BoxDecoration(
+                          shape: BoxShape.circle,
+                          color: AppColors.teal,
+                          boxShadow: [
+                            BoxShadow(
+                              color: Color(0xFF00F0B5),
+                              blurRadius: 6,
+                            ),
+                          ],
+                        ),
+                      ),
+                      const SizedBox(width: 7),
+                      const Text(
+                        'REAL-TIME GIS FEED • 10Hz TELEMETRY',
+                        style: TextStyle(
+                          color: AppColors.teal,
+                          fontSize: 9.5,
+                          fontWeight: FontWeight.w800,
+                          letterSpacing: 0.6,
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+
+        // BOTTOM LEFT: GPS Telemetry Readout
+        Positioned(
+          bottom: 12,
+          left: 12,
+          child: Container(
+            padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+            decoration: BoxDecoration(
+              color: const Color(0xFF070B12).withValues(alpha: 0.88),
+              borderRadius: BorderRadius.circular(6),
+              border: Border.all(color: AppColors.navyBorder.withValues(alpha: 0.8)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                const Icon(Icons.my_location, color: AppColors.teal, size: 12),
+                const SizedBox(width: 6),
+                Text(
+                  '${widget.sim.telemetry.latitude.toStringAsFixed(4)}°N  ${widget.sim.telemetry.longitude.toStringAsFixed(4)}°E',
+                  style: const TextStyle(
+                    color: AppColors.teal,
+                    fontSize: 11,
+                    fontWeight: FontWeight.w700,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+                const SizedBox(width: 8),
+                Text(
+                  '•  ALT: ${widget.sim.telemetry.altitudeM.toStringAsFixed(1)}m  •  SPD: 4.8 m/s',
+                  style: const TextStyle(
+                    color: AppColors.textSecondary,
+                    fontSize: 10.5,
+                    fontWeight: FontWeight.w500,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ],
+            ),
           ),
-        ],
+        ),
+
+        // BOTTOM RIGHT: Interactive Map Action Buttons
+        Positioned(
+          bottom: 12,
+          right: 12,
+          child: Container(
+            padding: const EdgeInsets.all(3),
+            decoration: BoxDecoration(
+              color: const Color(0xFF070B12).withValues(alpha: 0.88),
+              borderRadius: BorderRadius.circular(8),
+              border: Border.all(color: AppColors.navyBorder.withValues(alpha: 0.8)),
+            ),
+            child: Row(
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                _buildMapAction(
+                  icon: _autoFollow ? Icons.gps_fixed : Icons.gps_not_fixed,
+                  tooltip: _autoFollow ? 'Locking on Drone' : 'Follow Drone',
+                  color: _autoFollow ? AppColors.teal : AppColors.textSecondary,
+                  onTap: _centerDrone,
+                ),
+                const SizedBox(width: 2),
+                _buildMapAction(
+                  icon: Icons.crop_free,
+                  tooltip: 'Fit Facility',
+                  color: AppColors.textSecondary,
+                  onTap: _fitFacility,
+                ),
+                const SizedBox(width: 2),
+                _buildMapAction(
+                  icon: Icons.add,
+                  tooltip: 'Zoom In',
+                  color: AppColors.textSecondary,
+                  onTap: _zoomIn,
+                ),
+                const SizedBox(width: 2),
+                _buildMapAction(
+                  icon: Icons.remove,
+                  tooltip: 'Zoom Out',
+                  color: AppColors.textSecondary,
+                  onTap: _zoomOut,
+                ),
+              ],
+            ),
+          ),
+        ),
+      ],
+    );
+  }
+
+  Widget _buildLayerButton({
+    required String label,
+    required IconData icon,
+    required bool isSelected,
+    required VoidCallback onTap,
+  }) {
+    return InkWell(
+      onTap: onTap,
+      borderRadius: BorderRadius.circular(5),
+      child: AnimatedContainer(
+        duration: const Duration(milliseconds: 180),
+        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 5),
+        decoration: BoxDecoration(
+          color: isSelected ? AppColors.teal.withValues(alpha: 0.18) : Colors.transparent,
+          borderRadius: BorderRadius.circular(5),
+          border: Border.all(
+            color: isSelected ? AppColors.teal : Colors.transparent,
+            width: 1,
+          ),
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(
+              icon,
+              size: 12,
+              color: isSelected ? AppColors.teal : AppColors.textSecondary,
+            ),
+            const SizedBox(width: 5),
+            Text(
+              label,
+              style: TextStyle(
+                color: isSelected ? Colors.white : AppColors.textSecondary,
+                fontSize: 10,
+                fontWeight: isSelected ? FontWeight.w700 : FontWeight.w500,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+
+  Widget _buildMapAction({
+    required IconData icon,
+    required String tooltip,
+    required Color color,
+    required VoidCallback onTap,
+  }) {
+    return Tooltip(
+      message: tooltip,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(5),
+        child: Container(
+          width: 28,
+          height: 28,
+          alignment: Alignment.center,
+          child: Icon(icon, size: 15, color: color),
+        ),
       ),
     );
   }
 }
 
-class _MapPainter extends CustomPainter {
-  final SimulationData sim;
-  _MapPainter({required this.sim});
-
-  @override
-  void paint(Canvas canvas, Size size) {
-    final bg = Paint()..color = const Color(0xFF090D15);
-    canvas.drawRect(Offset.zero & size, bg);
-
-    // Subtle tactical grid
-    final gridPaint = Paint()
-      ..color = const Color(0xFF131924)
-      ..strokeWidth = 1;
-    for (int i = 1; i < 6; i++) {
-      canvas.drawLine(
-        Offset(size.width * i / 6, 0),
-        Offset(size.width * i / 6, size.height),
-        gridPaint,
-      );
-      canvas.drawLine(
-        Offset(0, size.height * i / 5),
-        Offset(size.width, size.height * i / 5),
-        gridPaint,
-      );
-    }
-
-    // Zone labels
-    const txtStyle = TextStyle(color: Color(0xFF334155), fontSize: 11, fontWeight: FontWeight.w600);
-    _drawLabel(canvas, 'ZONE A (STORAGE)', Offset(size.width * 0.15, size.height * 0.18), txtStyle);
-    _drawLabel(canvas, 'ZONE B (PIPE GALLERY)', Offset(size.width * 0.48, size.height * 0.18), txtStyle);
-    _drawLabel(canvas, 'ZONE C (WELDING)', Offset(size.width * 0.78, size.height * 0.18), txtStyle);
-    _drawLabel(canvas, 'BASE DOCK', Offset(size.width * 0.08, size.height * 0.78), txtStyle);
-
-    // Mission path
-    final pathPaint = Paint()
-      ..color = AppColors.teal.withValues(alpha: 0.35)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke
-      ..strokeCap = StrokeCap.round;
-    final waypoints = [
-      Offset(size.width * 0.12, size.height * 0.82),
-      Offset(size.width * 0.25, size.height * 0.35),
-      Offset(size.width * 0.50, size.height * 0.30),
-      Offset(size.width * 0.75, size.height * 0.35),
-      Offset(size.width * 0.65, size.height * 0.65),
-    ];
-    final path = Path()..moveTo(waypoints[0].dx, waypoints[0].dy);
-    for (final wp in waypoints.skip(1)) {
-      path.lineTo(wp.dx, wp.dy);
-    }
-    canvas.drawPath(path, pathPaint);
-
-    // Waypoint nodes
-    final wpPaint = Paint()..color = AppColors.teal.withValues(alpha: 0.6);
-    for (final wp in waypoints) {
-      canvas.drawCircle(wp, 4, wpPaint);
-    }
-
-    // Drone position
-    final idx = sim.waypointIndex.clamp(0, waypoints.length - 1);
-    final dronePos = waypoints[idx];
-    _drawDrone(canvas, dronePos);
-
-    // Hazard marker
-    if (sim.hazardInjected || sim.activeHazard != null) {
-      _drawHazard(canvas, waypoints[2], AppColors.critical);
-    }
-  }
-
-  void _drawDrone(Canvas canvas, Offset pos) {
-    canvas.drawCircle(pos, 12, Paint()..color = AppColors.teal.withValues(alpha: 0.2));
-    canvas.drawCircle(pos, 7, Paint()..color = AppColors.teal);
-    final iconPaint = Paint()
-      ..color = const Color(0xFF080A0F)
-      ..strokeWidth = 2
-      ..style = PaintingStyle.stroke;
-    canvas.drawLine(pos + const Offset(-4, -4), pos + const Offset(4, 4), iconPaint);
-    canvas.drawLine(pos + const Offset(4, -4), pos + const Offset(-4, 4), iconPaint);
-  }
-
-  void _drawHazard(Canvas canvas, Offset pos, Color color) {
-    canvas.drawCircle(pos, 26, Paint()..color = color.withValues(alpha: 0.15));
-    canvas.drawCircle(pos, 16, Paint()..color = color.withValues(alpha: 0.3));
-    canvas.drawCircle(pos, 8, Paint()..color = color.withValues(alpha: 0.8));
-    final outline = Paint()
-      ..color = color
-      ..strokeWidth = 1.5
-      ..style = PaintingStyle.stroke;
-    canvas.drawCircle(pos, 26, outline);
-  }
-
-  void _drawLabel(Canvas canvas, String text, Offset pos, TextStyle style) {
-    final span = TextSpan(text: text, style: style);
-    final painter = TextPainter(text: span, textDirection: TextDirection.ltr)..layout();
-    painter.paint(canvas, pos);
-  }
-
-  @override
-  bool shouldRepaint(_MapPainter old) => old.sim != sim;
-}
 
 // ── Sensor Panel ──────────────────────────────────────────────────────────────
 
@@ -879,7 +1444,7 @@ class _ChartWidget extends StatelessWidget {
             ),
             if (points.isNotEmpty)
               Text(
-                '${points.last['y']!.toStringAsFixed(1)}',
+                points.last['y']!.toStringAsFixed(1),
                 style: TextStyle(
                   color: color,
                   fontSize: 12,

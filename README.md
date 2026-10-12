@@ -1,4 +1,4 @@
-# 🧠 SkillSense AI — Intelligent Trainer & Trainee Performance Analytics Platform
+# 🧠 SkillSense AI — Intelligent Trainer & Safety Operations Platform
 
 <div align="center">
 
@@ -7,7 +7,7 @@
 [![Vercel Deployment](https://img.shields.io/badge/Deployed%20on-Vercel-000000?style=for-the-badge&logo=vercel&logoColor=white)](https://web-zeta-black-29.vercel.app)
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg?style=for-the-badge)](https://opensource.org/licenses/MIT)
 
-<h3>⚡ Empowering Trainers with Real-Time AI Insights, Skill Gap Detection & Automated Performance Roadmaps</h3>
+<h3>⚡ Empowering Trainers with Real-Time AI Insights, Skill Gap Detection & Industrial Telemetry</h3>
 
 **[🌐 Live Demo & Prototype](https://web-zeta-black-29.vercel.app)** • **[🚀 Vercel Production](https://web-zeta-black-29.vercel.app)** • **[📦 GitHub Repo](https://github.com/aditya-30-05/SkillSenseAI.git)**
 
@@ -15,119 +15,89 @@
 
 ---
 
-## 🌟 Quick Links
+## 🗂️ Monorepo Architecture & Directory Structure
 
-* 🔗 **Live Vercel Web App**: [https://web-zeta-black-29.vercel.app](https://web-zeta-black-29.vercel.app)
-* 📱 **Interactive Prototype**: [https://web-zeta-black-29.vercel.app](https://web-zeta-black-29.vercel.app)
-* 📂 **Source Repository**: [https://github.com/aditya-30-05/SkillSenseAI.git](https://github.com/aditya-30-05/SkillSenseAI.git)
+The repository is structured into distinct, modular subsystems:
 
----
-
-## 📖 Overview
-
-**SkillSense AI** is a next-generation corporate training and talent development dashboard built with Flutter Web. Designed with a sleek obsidian dark theme, glassmorphic accents, and micro-interactions, it provides trainers, managers, and enterprise coaches with an intelligent control center to monitor cohort progress, pinpoint skill deficiencies, simulate performance trajectory, and auto-generate personalized curriculum interventions.
-
----
-
-## ✨ Key Features & Modules
-
-### 1. 📊 Executive Dashboard & Analytics
-* **Cohort Health KPI Cards**: Real-time tracking of active trainees, average assessment scores, completion rates, and at-risk alerts.
-* **Skill Radar Matrix & Competency Breakdown**: Multi-dimensional capability maps across technical stacks, soft skills, and problem-solving metrics.
-* **Attendance & Weekly Velocity Graphs**: Interactive trendlines visualizing training engagement and milestone velocity.
-
-### 2. 👥 Trainee Roster & Dynamic Profiles
-* **Trainee Directory**: Filter by batch, status (Top Performer, On Track, Needs Attention), and domain.
-* **Deep-Dive Trainee Profile**: Detailed breakdown with milestone progression bars, skill gap badges, learning curve trajectories, and historical feedback timeline.
-
-### 3. 🤖 AI Assistant & Smart Copilot
-* **Interactive AI Chat**: Context-aware trainer co-pilot capable of answering performance queries, analyzing cohort drop-off risks, and recommending personalized remedial tasks.
-* **Prompt Quick Actions**: Instant prompts for generating quizzes, drafting 1-on-1 feedback reviews, and summarizing training sessions.
-
-### 4. 📈 Performance & Predictive Analytics
-* **Cohort-Wide Benchmarking**: Side-by-side comparative analysis of cohorts.
-* **Skill Distribution Heatmaps**: Highlighting areas where students excel vs. modules requiring trainer intervention.
-
-### 5. 📑 Automated Reports & Export Engine
-* **One-Click Comprehensive Report Generation**: Export PDF/CSV summaries for stakeholders.
-* **Assessment Insights**: Detailed breakdowns of quiz scores, assignment turnaround times, and evaluation rubrics.
-
-### 6. ⚙️ Customization & Enterprise Settings
-* **Theme & Workspace Preferences**: Customizable theme configurations and notification thresholds.
-* **System Health Monitoring**: Live status of analytics pipelines and sync status.
-
----
-
-## 🎨 Design System & Aesthetic Architecture
-
-* **Theme**: Deep obsidian dark palette (`#0B0F17`, `#111827`, `#1E293B`) with indigo/violet accents (`#6366F1`, `#8B5CF6`).
-* **Visual Styling**: Subtle borders, glassmorphic card containers (`InteractiveCard`), smooth hover transitions, and responsive fluid layout.
-* **Animations**: Gentle entry slide fades, staggered list appearance, and responsive interactive feedback states.
-
----
-
-## 🛠️ Tech Stack
-
-* **Framework**: [Flutter Web](https://flutter.dev) (Dart)
-* **State Management**: Provider / Stateful component architecture
-* **Icons & Assets**: Material Icons + Modern SVG Vector Integrations
-* **Deployment & Hosting**: [Vercel](https://vercel.com)
-* **CI/CD**: Git-based continuous deployment
-
----
-
-## 🚀 Getting Started Locally
-
-### Prerequisites
-* [Flutter SDK](https://flutter.dev/docs/get-started/install) (v3.19+ recommended)
-* [Dart SDK](https://dart.dev/get-dart)
-* Google Chrome or any modern web browser
-
-### Installation & Run
-
-1. **Clone the repository**:
-   ```bash
-   git clone https://github.com/aditya-30-05/SkillSenseAI.git
-   cd SkillSenseAI
-   ```
-
-2. **Install dependencies**:
-   ```bash
-   flutter pub get
-   ```
-
-3. **Run on local development server**:
-   ```bash
-   flutter run -d chrome
-   ```
-   *Or for headless web server:*
-   ```bash
-   flutter run -d web-server --web-port 3000 --web-hostname localhost
-   ```
-
-4. **Build for production**:
-   ```bash
-   flutter build web --release
-   ```
-
----
-
-## 🌐 Deploy to Vercel
-
-```bash
-# Build the production release
-flutter build web --release
-
-# Deploy using Vercel CLI
-vercel deploy build/web --prod --yes
+```
+trainer_app/
+├── 📱 frontend/              # Primary Flutter Cross-Platform Client (Mobile, Desktop, Web)
+│   ├── android/              # Native Android wrapper & Gradle configuration
+│   ├── ios/                  # Native iOS Xcode workspace & CocoaPods
+│   ├── web/                  # Flutter Web embedder & PWA manifest
+│   ├── lib/                  # Dart source code (Features, Widgets, Theming, State)
+│   │   ├── app/              # App Shell, theme tokens, responsive layout breakpoints
+│   │   ├── core/             # Constants & local mock datasets
+│   │   ├── features/         # 10 Domain screens (Dashboard, Live Monitor, Hazard Map, etc.)
+│   │   ├── models/           # Domain entity classes (Trainee, Drone, Hazard, Telemetry)
+│   │   ├── providers/        # Riverpod reactive state stores
+│   │   ├── services/         # Client-side simulation service & ticker
+│   │   └── widgets/          # Reusable UI library (Bento grid, Notch bar, Animated buttons)
+│   ├── pubspec.yaml          # Flutter package dependencies
+│   └── analysis_options.yaml # Static analysis rules & linter configuration
+│
+├── 🌐 web_portal/            # Next.js 16 & React 19 Operations Web Portal
+│   ├── app/                  # Next.js App Router pages and layouts
+│   ├── components/           # UI components, Radix UI & Lucide icons
+│   ├── public/               # Static assets & icons
+│   └── package.json          # Node dependencies & Next.js scripts
+│
+├── ⚙️ backend/               # Backend Services, APIs & Simulation Engine
+│   ├── api/                  # OpenAPI 3.1 REST & WebSocket specifications
+│   ├── simulation/           # Drone physics engine & gas sensor drift simulation
+│   └── services/             # Hazard injector & telemetry streaming services
+│
+├── 🗄️ database/              # Database Layer, Schemas & Seed Datasets
+│   ├── schemas/              # PostgreSQL & SQLite DDL tables (schema.sql)
+│   ├── seeds/                # Structured JSON seed records (trainees, sessions, hazards, drones)
+│   └── models/               # Visual Mermaid ER diagrams & data dictionary
+│
+├── 📚 docs/                  # Documentation & Technical Audit Reports
+│   ├── frontend_report.md    # Complete UI/UX, Design System & Screen Audit Report
+│   └── architecture.md       # High-level system architecture and data flows
+│
+└── 🚀 vercel.json            # Vercel deployment routing configuration
 ```
 
 ---
 
-## 📄 License
+## 🚀 Getting Started
 
-This project is licensed under the MIT License — see the [LICENSE](LICENSE) file for details.
+### 1. Running the Flutter Frontend
+```bash
+cd frontend
+flutter pub get
+flutter run -d chrome     # Run in Chrome
+# or
+flutter run -d windows    # Run natively on Windows Desktop
+```
 
-<div align="center">
-  <sub>Built with ❤️ by Aditya & the SkillSense AI Team</sub>
-</div>
+### 2. Running the Web Portal (Next.js)
+```bash
+cd web_portal
+npm install
+npm run dev
+```
+
+### 3. Running Backend Simulation
+```bash
+cd backend/simulation
+python simulation_engine.py
+```
+
+### 4. Database Setup
+```bash
+# PostgreSQL
+psql -U postgres -d skillsense_db -f database/schemas/schema.sql
+
+# SQLite
+sqlite3 database/skillsense.db < database/schemas/schema.sql
+```
+
+---
+
+## 📑 Detailed Technical Documentation
+* **[Frontend Audit Report](file:///c:/Users/ACER/trainer_app/docs/frontend_report.md)**: Deep dive into design tokens, 10 feature screens, component library, and micro-interactions.
+* **[System Architecture](file:///c:/Users/ACER/trainer_app/docs/architecture.md)**: Microservice topology, data communication, and state lifecycles.
+* **[Database ER Diagram](file:///c:/Users/ACER/trainer_app/database/models/er_diagram.md)**: Entity relationships, table indices, and schema design.
+* **[Backend API Spec](file:///c:/Users/ACER/trainer_app/backend/api/api_spec.json)**: REST & WebSocket API specification.

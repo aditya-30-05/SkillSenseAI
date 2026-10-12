@@ -35,36 +35,32 @@ class _SessionsScreenState extends ConsumerState<SessionsScreen> {
             children: [
               Row(
                 children: [
-                  const Column(
+                  Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(
+                      FlipText(
                         'Training Sessions Registry',
-                        style: TextStyle(
+                        style: const TextStyle(
                           color: AppColors.textPrimary,
                           fontSize: 26,
                           fontWeight: FontWeight.w800,
                           letterSpacing: -0.6,
                         ),
                       ),
-                      SizedBox(height: 4),
-                      Text(
+                      const SizedBox(height: 4),
+                      const Text(
                         'Schedule new diagnostic missions and review completed assessment records',
                         style: TextStyle(color: AppColors.textSecondary, fontSize: 13),
                       ),
                     ],
                   ),
                   const Spacer(),
-                  ElevatedButton.icon(
+                  AnimatedButton(
                     onPressed: () => _showNewSession(context, ref),
-                    icon: const Icon(Icons.add_circle_outline, size: 16),
-                    label: const Text('New Session'),
-                    style: ElevatedButton.styleFrom(
-                      backgroundColor: AppColors.teal,
-                      foregroundColor: const Color(0xFF080A0F),
-                      padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-                      shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                    ),
+                    icon: Icons.add_circle_outline,
+                    text: 'New Session',
+                    variant: AnimatedButtonVariant.primary,
+                    height: 42,
                   ),
                 ],
               ),

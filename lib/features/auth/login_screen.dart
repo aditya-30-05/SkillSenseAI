@@ -135,48 +135,56 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
               mainAxisAlignment: MainAxisAlignment.center,
               children: [
                 _BrandHeader(),
-                const SizedBox(height: 56),
-                const Text(
+                const SizedBox(height: 24),
+                const FlipFadeText(
+                  words: [
+                    'AUTONOMOUS DRONE SAFETY',
+                    'REAL-TIME HAZARD DETECTION',
+                    'MULTI-SENSOR TELEMETRY',
+                    'AI COACH REMEDIATION',
+                  ],
+                  showBadge: true,
+                  prefix: 'MISSION PROFILE:',
+                ),
+                const SizedBox(height: 20),
+                const FlipText(
                   'Train Smarter.\nDetect Hazards Faster.',
                   style: TextStyle(
                     color: AppColors.textPrimary,
-                    fontSize: 44,
+                    fontSize: 40,
                     fontWeight: FontWeight.w800,
                     height: 1.15,
                     letterSpacing: -1.0,
                   ),
                 ),
-                const SizedBox(height: 20),
+                const SizedBox(height: 14),
                 ConstrainedBox(
                   constraints: const BoxConstraints(maxWidth: 500),
                   child: const Text(
                     'Next-generation diagnostic & safety simulator for skilled industrial trades. Real-time telemetry, simulated hazard injections, and AI-driven coaching.',
                     style: TextStyle(
                       color: AppColors.textSecondary,
-                      fontSize: 16,
-                      height: 1.6,
+                      fontSize: 14,
+                      height: 1.5,
                     ),
                   ),
                 ),
-                const SizedBox(height: 48),
-                _FeaturePillRow(
+                const SizedBox(height: 24),
+                // Drone visual with Pixelated Image Trail
+                ConstrainedBox(
+                  constraints: const BoxConstraints(maxWidth: 520),
+                  child: const PixelatedImageTrail(
+                    height: 190,
+                    slices: 5,
+                  ),
+                ),
+                const SizedBox(height: 18),
+                const _FeaturePillRow(
                   icon: Icons.sensors_outlined,
                   title: 'Multi-Sensor Telemetry Fusion',
-                  desc: 'High-frequency Methane, CO & H2S ppm monitoring',
+                  desc: 'High-frequency Methane, CO & H2S monitoring with automated AI scoring',
                 ),
-                const SizedBox(height: 16),
-                _FeaturePillRow(
-                  icon: Icons.radar_outlined,
-                  title: 'Autonomous Drone Flight HUD',
-                  desc: 'Live waypoint navigation with manual hazard injection',
-                ),
-                const SizedBox(height: 16),
-                _FeaturePillRow(
-                  icon: Icons.psychology_outlined,
-                  title: 'AI Diagnostic Coach',
-                  desc: 'Personalized rubric analysis & trainee remediation',
-                ),
-                const SizedBox(height: 48),
+                const SizedBox(height: 20),
                 Row(
                   children: [
                     const PulseDot(color: AppColors.safe, size: 7),
@@ -222,7 +230,18 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           child: Column(
             children: [
               _BrandHeader(),
-              const SizedBox(height: 32),
+              const SizedBox(height: 16),
+              const FlipFadeText(
+                words: [
+                  'AUTONOMOUS DRONE SAFETY',
+                  'REAL-TIME HAZARD DETECTION',
+                  'MULTI-SENSOR TELEMETRY',
+                  'AI COACH REMEDIATION',
+                ],
+                showBadge: true,
+                prefix: 'MISSION PROFILE:',
+              ),
+              const SizedBox(height: 24),
               _loginCard(),
             ],
           ),
@@ -335,38 +354,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           ),
           const SizedBox(height: 26),
           // Sign In Primary Button
-          SizedBox(
-            width: double.infinity,
+          AnimatedButton(
+            onPressed: _isLoading ? null : _login,
+            isLoading: _isLoading,
+            text: 'Launch Dashboard',
+            icon: Icons.arrow_forward,
+            variant: AnimatedButtonVariant.primary,
             height: 48,
-            child: ElevatedButton(
-              onPressed: _isLoading ? null : _login,
-              style: ElevatedButton.styleFrom(
-                backgroundColor: AppColors.teal,
-                foregroundColor: const Color(0xFF080A0F),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-                elevation: 0,
-              ),
-              child: _isLoading
-                  ? const SizedBox(
-                      height: 20,
-                      width: 20,
-                      child: CircularProgressIndicator(
-                        color: Color(0xFF080A0F),
-                        strokeWidth: 2.2,
-                      ),
-                    )
-                  : const Row(
-                      mainAxisAlignment: MainAxisAlignment.center,
-                      children: [
-                        Text(
-                          'Launch Dashboard',
-                          style: TextStyle(fontSize: 14, fontWeight: FontWeight.w700),
-                        ),
-                        SizedBox(width: 8),
-                        Icon(Icons.arrow_forward, size: 16),
-                      ],
-                    ),
-            ),
+            width: double.infinity,
           ),
           const SizedBox(height: 20),
           Row(
@@ -389,23 +384,14 @@ class _LoginScreenState extends ConsumerState<LoginScreen>
           ),
           const SizedBox(height: 20),
           // 1-Click Demo Evaluation Button
-          SizedBox(
-            width: double.infinity,
+          AnimatedButton(
+            onPressed: _isLoading ? null : _demoLogin,
+            isLoading: _isLoading,
+            text: 'Explore Live Demo Prototype',
+            icon: Icons.bolt,
+            variant: AnimatedButtonVariant.warning,
             height: 46,
-            child: OutlinedButton.icon(
-              onPressed: _isLoading ? null : _demoLogin,
-              style: OutlinedButton.styleFrom(
-                foregroundColor: AppColors.warning,
-                side: BorderSide(color: AppColors.warning.withValues(alpha: 0.5), width: 1),
-                backgroundColor: AppColors.warning.withValues(alpha: 0.05),
-                shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-              ),
-              icon: const Icon(Icons.bolt, size: 18),
-              label: const Text(
-                'Explore Live Demo Prototype',
-                style: TextStyle(fontSize: 13, fontWeight: FontWeight.w600),
-              ),
-            ),
+            width: double.infinity,
           ),
           const SizedBox(height: 22),
           Container(

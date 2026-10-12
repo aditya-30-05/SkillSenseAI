@@ -1,0 +1,58 @@
+[
+  {
+    "id": "S001",
+    "traineeId": "T001",
+    "exerciseType": "Gas Leak Localization",
+    "status": "completed",
+    "score": 93.5,
+    "durationSeconds": 480,
+    "hazardDetected": true,
+    "reactionTimeSeconds": 14.5,
+    "hazardsInjected": 3,
+    "hazardsResolved": 3,
+    "timestamp": "2026-10-08T14:30:00.000Z",
+    "trainerNotes": "Excellent spatial tracking in Zone B. Detected elevated methane within 15 seconds."
+  },
+  {
+    "id": "S002",
+    "traineeId": "T002",
+    "exerciseType": "Toxic Leak Containment Protocol",
+    "status": "completed",
+    "score": 97.0,
+    "durationSeconds": 520,
+    "hazardDetected": true,
+    "reactionTimeSeconds": 11.2,
+    "hazardsInjected": 4,
+    "hazardsResolved": 4,
+    "timestamp": "2026-10-08T16:00:00.000Z",
+    "trainerNotes": "Flawless protocol adherence. Trainee executed emergency isolation valves in record time."
+  },
+  {
+    "id": "S003",
+    "traineeId": "T003",
+    "exerciseType": "Emergency Return to Home & Evacuation",
+    "status": "active",
+    "score": 68.0,
+    "durationSeconds": 310,
+    "hazardDetected": false,
+    "reactionTimeSeconds": 32.0,
+    "hazardsInjected": 2,
+    "hazardsResolved": 1,
+    "timestamp": "2026-10-09T10:15:00.000Z",
+    "trainerNotes": "Session ongoing. Struggling with altitude calibration during sensor drift."
+  },
+  {
+    "id": "S004",
+    "traineeId": "T004",
+    "exerciseType": "Confined Space Gas Inspection",
+    "status": "scheduled",
+    "score": 0.0,
+    "durationSeconds": 0,
+    "hazardDetected": false,
+    "reactionTimeSeconds": 0.0,
+    "hazardsInjected": 3,
+    "hazardsResolved": 0,
+    "timestamp": "2026-10-10T09:00:00.000Z",
+    "trainerNotes": "Pre-flight checks passed. Battery primed at 98%."
+  }
+]

@@ -32,8 +32,13 @@ class DashboardScreen extends ConsumerWidget {
               const SizedBox(height: 20),
               _SystemStatus(simData: simData),
               const SizedBox(height: 24),
-              // KPI Cards
-              _KpiCards(sessions: sessions),
+              // Bento Grid KPI & Telemetry Layout
+              AgentBentoGrid(
+                sessions: sessions,
+                simData: simData,
+                onLiveCockpitTap: () =>
+                    ref.read(navIndexProvider.notifier).state = 2,
+              ),
               const SizedBox(height: 24),
               isWide
                   ? Row(
@@ -78,7 +83,7 @@ class _Header extends ConsumerWidget {
             children: [
               Row(
                 children: [
-                  Text(
+                  FlipText(
                     '$greeting, Trainer',
                     style: const TextStyle(
                       color: AppColors.textPrimary,
@@ -115,19 +120,14 @@ class _Header extends ConsumerWidget {
             ],
           ),
         ),
-        ElevatedButton.icon(
+        AnimatedButton(
           onPressed: () {
             ref.read(navIndexProvider.notifier).state = 2; // Navigate to Live Monitor
           },
-          icon: const Icon(Icons.videocam_outlined, size: 17),
-          label: const Text('Live Cockpit'),
-          style: ElevatedButton.styleFrom(
-            backgroundColor: AppColors.teal,
-            foregroundColor: const Color(0xFF080A0F),
-            padding: const EdgeInsets.symmetric(horizontal: 18, vertical: 12),
-            shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
-            elevation: 0,
-          ),
+          icon: Icons.videocam_outlined,
+          text: 'Live Cockpit',
+          variant: AnimatedButtonVariant.primary,
+          height: 42,
         ),
       ],
     );
@@ -217,80 +217,6 @@ class _StatusPill extends StatelessWidget {
   }
 }
 
-class _KpiCards extends StatelessWidget {
-  final List<TrainingSession> sessions;
-  const _KpiCards({required this.sessions});
-
-  @override
-  Widget build(BuildContext context) {
-    final active = sessions.where((s) => s.status == SessionStatus.active).length;
-    final completed = sessions.where((s) => s.status == SessionStatus.completed);
-    final avgScore = completed.isEmpty
-        ? 0.0
-        : completed.map((s) => s.score).reduce((a, b) => a + b) / completed.length;
-    final totalHazards = MockData.hazardHistory.length;
-
-    return LayoutBuilder(builder: (context, constraints) {
-      final crossCount = constraints.maxWidth > 900
-          ? 3
-          : constraints.maxWidth > 580
-              ? 2
-              : 1;
-      return GridView.count(
-        crossAxisCount: crossCount,
-        shrinkWrap: true,
-        physics: const NeverScrollableScrollPhysics(),
-        crossAxisSpacing: 16,
-        mainAxisSpacing: 16,
-        childAspectRatio: 1.65,
-        children: [
-          MetricCard(
-            title: 'Enrolled Trainees',
-            value: '${MockData.trainees.length}',
-            subtitle: '3 Active Now',
-            icon: Icons.school_outlined,
-            iconColor: AppColors.teal,
-          ),
-          MetricCard(
-            title: 'Active Sessions',
-            value: '$active',
-            subtitle: 'Live In Flight',
-            icon: Icons.flight_takeoff_outlined,
-            iconColor: AppColors.safe,
-          ),
-          MetricCard(
-            title: 'Hazards Detected Today',
-            value: '$totalHazards',
-            subtitle: '100% Verified',
-            icon: Icons.warning_amber_rounded,
-            iconColor: AppColors.warning,
-          ),
-          MetricCard(
-            title: 'Avg Detection Accuracy',
-            value: '91.6%',
-            subtitle: '+2.4% this week',
-            icon: Icons.track_changes_outlined,
-            iconColor: AppColors.blue,
-          ),
-          MetricCard(
-            title: 'Average Response Time',
-            value: '18.4s',
-            subtitle: '-3.2s faster',
-            icon: Icons.timer_outlined,
-            iconColor: AppColors.teal,
-          ),
-          MetricCard(
-            title: 'Cohort Completion',
-            value: '84%',
-            subtitle: '${completed.length}/${sessions.length} Complete • ${avgScore.toStringAsFixed(0)} pts',
-            icon: Icons.verified_outlined,
-            iconColor: AppColors.aiPurple,
-          ),
-        ],
-      );
-    });
-  }
-}
 
 class _LiveActivity extends StatelessWidget {
   final List<TrainingSession> sessions;

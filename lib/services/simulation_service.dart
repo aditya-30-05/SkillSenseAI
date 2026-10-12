@@ -73,57 +73,74 @@ class SimulationNotifier extends StateNotifier<SimulationData> {
   SimulationNotifier()
       : super(SimulationData(
           telemetry: _initialTelemetry(),
-          state: SimulationState.idle,
-          waypointIndex: 0,
+          state: SimulationState.running,
+          waypointIndex: 1,
           hazardInjected: false,
-          gasHistory: [],
-          tempHistory: [],
-          humidityHistory: [],
-        ));
+          gasHistory: _generateInitialHistory(1.35, 0.4),
+          tempHistory: _generateInitialHistory(30.4, 1.2),
+          humidityHistory: _generateInitialHistory(55.2, 2.5),
+        )) {
+    startMission();
+  }
+
+  static List<Map<String, double>> _generateInitialHistory(double baseline, double variance) {
+    final now = DateTime.now().millisecondsSinceEpoch.toDouble();
+    final rng = Random();
+    return List.generate(15, (i) {
+      final t = now - (15 - i) * 1000;
+      final val = baseline + (rng.nextDouble() - 0.5) * variance;
+      return {'x': t, 'y': double.parse(val.toStringAsFixed(2))};
+    });
+  }
 
   Timer? _ticker;
   final Random _rng = Random();
-  double _gasPpm = 1.2;
-  double _tempC = 30.0;
-  double _humidity = 55.0;
-  double _altitude = 0.0;
+  double _gasPpm = 1.35;
+  double _tempC = 30.4;
+  double _humidity = 55.2;
+  double _altitude = 6.2;
   int _battery = 82;
-  int _signal = 91;
-  int _flightSec = 0;
-  int _waypointIndex = 0;
+  int _signal = 94;
+  int _flightSec = 15;
+  int _waypointIndex = 1;
   bool _hazardActive = false;
-  double _hazardGasTarget = 1.2;
+  double _hazardGasTarget = 1.35;
 
   static const _waypoints = [
-    MissionWaypoint(lat: 20.5937, lng: 78.9629, zone: 'Base', altitude: 0),
-    MissionWaypoint(lat: 20.5940, lng: 78.9631, zone: 'Zone A', altitude: 6),
-    MissionWaypoint(lat: 20.5943, lng: 78.9634, zone: 'Zone B', altitude: 8),
-    MissionWaypoint(lat: 20.5946, lng: 78.9637, zone: 'Zone C', altitude: 8),
-    MissionWaypoint(lat: 20.5942, lng: 78.9641, zone: 'Inspection Area', altitude: 5),
+    MissionWaypoint(lat: 20.5937, lng: 78.9629, zone: 'Base Station', altitude: 0),
+    MissionWaypoint(lat: 20.5940, lng: 78.9631, zone: 'Zone A - Pipe Gallery', altitude: 6),
+    MissionWaypoint(lat: 20.5943, lng: 78.9634, zone: 'Zone B - Gas Storage', altitude: 8),
+    MissionWaypoint(lat: 20.5946, lng: 78.9637, zone: 'Zone C - Welding Bay', altitude: 8),
+    MissionWaypoint(lat: 20.5942, lng: 78.9641, zone: 'Inspection Corridor', altitude: 5),
   ];
 
   void startMission() {
-    _waypointIndex = 0;
-    _gasPpm = 1.2;
-    _tempC = 30.0;
-    _humidity = 55.0;
-    _altitude = 0.0;
-    _battery = 82;
-    _signal = 91;
-    _flightSec = 0;
+    _ticker?.cancel();
     _hazardActive = false;
+    _hazardGasTarget = 1.35;
+    if (_altitude < 2.0) _altitude = 6.2;
+    if (_battery <= 10) _battery = 82;
+
+    final gasH = state.gasHistory.isNotEmpty
+        ? state.gasHistory
+        : _generateInitialHistory(1.35, 0.4);
+    final tempH = state.tempHistory.isNotEmpty
+        ? state.tempHistory
+        : _generateInitialHistory(30.4, 1.2);
+    final humH = state.humidityHistory.isNotEmpty
+        ? state.humidityHistory
+        : _generateInitialHistory(55.2, 2.5);
 
     state = state.copyWith(
       state: SimulationState.running,
-      waypointIndex: 0,
       hazardInjected: false,
-      gasHistory: [],
-      tempHistory: [],
-      humidityHistory: [],
+      activeHazard: null,
+      waypointIndex: _waypointIndex == 0 ? 1 : _waypointIndex,
+      gasHistory: gasH,
+      tempHistory: tempH,
+      humidityHistory: humH,
     );
-
-    _ticker?.cancel();
-    _ticker = Timer.periodic(const Duration(milliseconds: 1200), _tick);
+    _ticker = Timer.periodic(const Duration(milliseconds: 1000), _tick);
   }
 
   void pauseMission() {
@@ -133,31 +150,46 @@ class SimulationNotifier extends StateNotifier<SimulationData> {
 
   void resumeMission() {
     if (state.state == SimulationState.paused) {
-      state = state.copyWith(state: SimulationState.running);
-      _ticker = Timer.periodic(const Duration(milliseconds: 1200), _tick);
+      state = state.copyWith(
+        state: _hazardActive ? SimulationState.hazardPhase : SimulationState.running,
+      );
+      _ticker?.cancel();
+      _ticker = Timer.periodic(const Duration(milliseconds: 1000), _tick);
     }
   }
 
   void stopMission() {
     _ticker?.cancel();
+    _hazardActive = false;
+    _altitude = 0.0;
     state = state.copyWith(
       state: SimulationState.completed,
       hazardInjected: false,
+      activeHazard: null,
     );
   }
 
   void resetMission() {
     _ticker?.cancel();
-    _gasPpm = 1.2;
+    _gasPpm = 1.24;
+    _tempC = 30.0;
+    _humidity = 55.0;
+    _altitude = 2.3;
+    _battery = 85;
+    _signal = 92;
+    _flightSec = 0;
+    _waypointIndex = 0;
     _hazardActive = false;
+    _hazardGasTarget = 1.24;
     state = SimulationData(
       telemetry: _initialTelemetry(),
       state: SimulationState.idle,
       waypointIndex: 0,
       hazardInjected: false,
-      gasHistory: [],
-      tempHistory: [],
-      humidityHistory: [],
+      activeHazard: null,
+      gasHistory: _generateInitialHistory(1.24, 0.3),
+      tempHistory: _generateInitialHistory(30.0, 1.0),
+      humidityHistory: _generateInitialHistory(55.0, 2.0),
     );
   }
 
@@ -171,6 +203,7 @@ class SimulationNotifier extends StateNotifier<SimulationData> {
     state = state.copyWith(
       activeHazard: null,
       hazardInjected: false,
+      state: SimulationState.running,
     );
     _hazardActive = false;
     _hazardGasTarget = 1.2;
@@ -181,9 +214,9 @@ class SimulationNotifier extends StateNotifier<SimulationData> {
     if (_battery > 0 && _flightSec % 30 == 0) _battery--;
     _signal = 85 + _rng.nextInt(10);
 
-    // Move waypoints
-    if (_flightSec % 10 == 0 && _waypointIndex < _waypoints.length - 1) {
-      _waypointIndex++;
+    // Move waypoints continuously across all plant sectors
+    if (_flightSec % 10 == 0) {
+      _waypointIndex = (_waypointIndex + 1) % _waypoints.length;
     }
 
     final wp = _waypoints[_waypointIndex];
@@ -275,7 +308,14 @@ class SimulationNotifier extends StateNotifier<SimulationData> {
       );
     }
 
+    final simState = _hazardActive
+        ? SimulationState.hazardPhase
+        : (state.state == SimulationState.paused
+            ? SimulationState.paused
+            : SimulationState.running);
+
     state = state.copyWith(
+      state: simState,
       telemetry: reading,
       waypointIndex: _waypointIndex,
       gasHistory: gasH.length > maxPts ? gasH.sublist(gasH.length - maxPts) : gasH,
@@ -293,12 +333,12 @@ class SimulationNotifier extends StateNotifier<SimulationData> {
       timestamp: DateTime.now(),
       latitude: 20.5937,
       longitude: 78.9629,
-      altitudeM: 0.0,
-      gasPpm: 1.2,
+      altitudeM: 2.3,
+      gasPpm: 1.24,
       temperatureC: 30.0,
       humidityPercent: 55.0,
-      batteryPercent: 82,
-      signalStrength: 91,
+      batteryPercent: 85,
+      signalStrength: 92,
       hazardDetected: false,
       hazardType: 'none',
       confidence: 0.0,

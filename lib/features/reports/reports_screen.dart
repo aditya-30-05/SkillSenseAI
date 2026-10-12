@@ -41,7 +41,7 @@ class ReportsScreen extends ConsumerWidget {
                             ),
                           ),
                           const SizedBox(width: 10),
-                          const Text(
+                          const FlipText(
                             'Reports',
                             style: TextStyle(
                               color: AppColors.textPrimary,
